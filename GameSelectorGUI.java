@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.stream.Stream;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.MediaTracker;
+import java.awt.Image;
 import javax.swing.*;
 
 public class GameSelectorGUI{
@@ -23,9 +25,9 @@ public class GameSelectorGUI{
     JLabel GameIcon;
     JLabel ExplainText;
 
-    // 追加: 背景用ラベル
-    JLabel backgroundLabel;
-
+    // 変更: 背景用ラベル -> 背景を描画するパネルに置き換え
+    BackgroundPanel backgroundPanel;
+    
     // アニメーション用
     int[] currentSizes;
     int[] targetSizes;
@@ -47,7 +49,7 @@ public class GameSelectorGUI{
          //ゲームのリストを作成する
         Games.add(new Game("Re Skipper", "GameDatas\\reskipper\\Re Skipper.exe", "Images\\reskipper.png","<html><body>宇宙空間の中<br />せまりくる敵と隕石を退治して<br />スコアを稼ぐゲームです</body></html>"));
         Games.add(new Game("ええから成仏せぇ", "GameDatas\\eekara\\u1w20240812.exe", "Images\\eekara.png","<html><body>蘇ってきたゾンビを<br />ハンマーでぶったたいて<br />地に還すゲームです</body></html>"));
-        Games.add(new Game("Imaginary", "GameDatas\\Imaginary\\Imaginary.exe", "Images\\imaginary.png","<html><body>数学IIIの教材「複素数平面」を<br />パク参考にしたアクションゲームです</body></html>"));
+        Games.add(new Game("Imaginary", "GameDatas\\Imaginary\\Imaginary.exe", "Images\\imaginary.png","<html><body>数学IIIの教材「複素数平面」を<BR>パク参考にしたアクションゲームです</body></html>"));
 
         //maxmizeにしたい
         Dimension dim=Toolkit.getDefaultToolkit().getScreenSize();
@@ -61,18 +63,12 @@ public class GameSelectorGUI{
         f.setSize(width, height);
         f.setLayout(new GridLayout(1,2));
 
-        // 追加: 背景ラベルを layered pane に置く
-        // backgroundLabel = new JLabel(Games.get(selectNumber).backGround);
-        // 起動時は Game.image を背景に使うように変更
-        backgroundLabel = new JLabel(Games.get(selectNumber).image);
-        // backgroundLabel.setBounds(0, 0, width, height);
-        backgroundLabel.setSize(width, height);
-        f.getLayeredPane().add(backgroundLabel, Integer.valueOf(Integer.MIN_VALUE));
-        //f.pack();
-         // 最背面に追加
-        
-
-
+        // 背景用パネルを作成してフレームのコンテントに設定（背景は自動でリサイズして描画される）
+        Image initialBg = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
+        backgroundPanel = new BackgroundPanel(initialBg);
+        backgroundPanel.setLayout(new GridLayout(1,2));
+        f.setContentPane(backgroundPanel);
+ 
         // 文字を配置する際、JFrame.addでは各方角に1つしか配置できないらしいのでPanelを使用する。
         JPanel textPanel=new JPanel();
         textPanel.setLayout(new BoxLayout(textPanel,BoxLayout.Y_AXIS));
@@ -164,14 +160,16 @@ public class GameSelectorGUI{
         // ExplainText.setFont(new Font("BIZ UDPゴシック",Font.PLAIN,36));
         // iconPanel.add(ExplainText, BorderLayout.CENTER);
 
-        f.add(textPanel);
-        f.add(iconPanel);
+        // 背景パネル上に他コンポーネントを追加（透過設定を維持）
+        backgroundPanel.add(textPanel);
+        backgroundPanel.add(iconPanel);
 
-        // ウィンドウリサイズ時に背景ラベルのサイズを更新
+        // リサイズ時は背景を再描画
         f.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                backgroundLabel.setSize(f.getSize());
+                backgroundPanel.revalidate();
+                backgroundPanel.repaint();
             }
         });
 
@@ -202,12 +200,12 @@ public class GameSelectorGUI{
         if(selectNumber==GameTexts.size()-1) {
             GameIcon.setIcon(null);
             // Exit または無効時は背景をクリア
-            backgroundLabel.setIcon(null);
+            backgroundPanel.setBackgroundImage(null);
         }
         else {
             GameIcon.setIcon(Games.get(selectNumber).image);
             // 背景を選択中のゲームの backGround に更新
-            backgroundLabel.setIcon(Games.get(selectNumber).backGround);
+            backgroundPanel.setBackgroundImage(Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null);
         }
 
         // 前回選択されていた項目は即座に小さくする（アニメーション不要）
@@ -335,4 +333,32 @@ class BaseFrame extends JFrame implements  KeyListener{
         
     }
 }
-// ...existing code...
+
+// 背景描画用パネル（コンポーネントの背面に画像を描く）
+class BackgroundPanel extends JPanel {
+    private Image backgroundImage;
+
+    public BackgroundPanel(Image img) {
+        this.backgroundImage = img;
+        // パネル自体は透明にしておく（子コンポーネントの透過を利用）
+        setOpaque(false);
+    }
+
+    public void setBackgroundImage(Image img) {
+        this.backgroundImage = img;
+        repaint();
+    }
+
+    @Override
+    protected void paintComponent(java.awt.Graphics g) {
+        // 先に親の処理（必要なら背景色）を行う
+        super.paintComponent(g);
+        if (backgroundImage != null) {
+            // パネルサイズに合わせてスケーリングして描画（高品質レンダリングは必要に応じて追加）
+            int w = getWidth();
+            int h = getHeight();
+            g.drawImage(backgroundImage, 0, 0, w, h, this);
+        }
+    }
+}
+
