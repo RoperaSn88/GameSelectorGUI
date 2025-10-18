@@ -27,6 +27,7 @@ public class GameSelectorGUI{
 
     // 変更: 背景用ラベル -> 背景を描画するパネルに置き換え
     BackgroundPanel backgroundPanel;
+    BackgroundPanel backgroundPanelCover;
     
     // アニメーション用
     int[] currentSizes;
@@ -47,9 +48,9 @@ public class GameSelectorGUI{
 
     public GameSelectorGUI(){
          //ゲームのリストを作成する
-        Games.add(new Game("Re Skipper", "GameDatas\\reskipper\\Re Skipper.exe", "Images\\reskipper.png","<html><body>宇宙空間の中<br />せまりくる敵と隕石を退治して<br />スコアを稼ぐゲームです</body></html>"));
-        Games.add(new Game("ええから成仏せぇ", "GameDatas\\eekara\\u1w20240812.exe", "Images\\eekara.png","<html><body>蘇ってきたゾンビを<br />ハンマーでぶったたいて<br />地に還すゲームです</body></html>"));
-        Games.add(new Game("Imaginary", "GameDatas\\Imaginary\\Imaginary.exe", "Images\\imaginary.png","<html><body>数学IIIの教材「複素数平面」を<BR>パク参考にしたアクションゲームです</body></html>"));
+        Games.add(new Game("Re Skipper", "GameDatas\\reskipper\\Re Skipper.exe", "Images\\reskipper.png",null,"<html><body>宇宙空間の中<br />せまりくる敵と隕石を退治して<br />スコアを稼ぐゲームです</body></html>"));
+        Games.add(new Game("ええから成仏せぇ", "GameDatas\\eekara\\u1w20240812.exe", "Images\\eekara.png","backGround\\eekara_back.png","<html><body>蘇ってきたゾンビを<br />ハンマーでぶったたいて<br />地に還すゲームです</body></html>"));
+        Games.add(new Game("Imaginary", "GameDatas\\Imaginary\\Imaginary.exe", "Images\\imaginary.png",null,"<html><body>数学IIIの教材「複素数平面」を<BR>パク参考にしたアクションゲームです</body></html>"));
 
         //maxmizeにしたい
         Dimension dim=Toolkit.getDefaultToolkit().getScreenSize();
@@ -67,7 +68,12 @@ public class GameSelectorGUI{
         Image initialBg = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
         backgroundPanel = new BackgroundPanel(initialBg);
         backgroundPanel.setLayout(new GridLayout(1,2));
+        ImageIcon cv = new ImageIcon("backGroundCover.png");
+        Image cover = cv.getImage();
+        backgroundPanelCover=new BackgroundPanel(cover);
+        backgroundPanelCover.setLayout(new GridLayout(1,2));
         f.setContentPane(backgroundPanel);
+        //f.setContentPane(backgroundPanelCover);
  
         // 文字を配置する際、JFrame.addでは各方角に1つしか配置できないらしいのでPanelを使用する。
         JPanel textPanel=new JPanel();
@@ -85,7 +91,7 @@ public class GameSelectorGUI{
             textPanel.add(GameText);
         });
         //Exit用
-        Game Exit=new Game("[Exit]","null","null","ウィンドウを閉じます");
+        Game Exit=new Game("[Exit]","null","null","ウィンドウを閉じます",null);
         Games.add(Exit);
         JLabel GameText=new JLabel();
         GameText.setText(Exit.name);

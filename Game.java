@@ -9,16 +9,19 @@ public class Game {
     public ImageIcon backGround;
     public String Explain;
 
-    public Game(String name,String path,String imagePath,String Exp){
+    public Game(String name,String path,String imagePath,String backPath,String Exp){
         this.name=name;
         this.path=path;
         this.imagePath=imagePath;
         this.image=new ImageIcon(imagePath);
-        this.backGround = new ImageIcon(imagePath);
+        this.backGround = new ImageIcon(backPath);
         if (image.getImageLoadStatus() != MediaTracker.COMPLETE) {
-            System.err.println("画像の読み込みに失敗しました: " + path);
+            System.err.println("アイコンの読み込みに失敗しました: " + path);
             image = new ImageIcon(); 
-            backGround = new ImageIcon();
+        }
+        if (backGround.getImageLoadStatus() != MediaTracker.COMPLETE) {
+            System.err.println("アイコンの読み込みに失敗しました: " + path);
+            backGround = new ImageIcon(); 
         }
 
         this.Explain=Exp;
