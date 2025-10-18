@@ -2,6 +2,7 @@
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
@@ -15,7 +16,11 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.MediaTracker;
 import java.awt.Image;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import javax.swing.*;
+import java.io.*;
+import java.nio.file.*;
 
 public class GameSelectorGUI{
     ArrayList<Game> Games=new ArrayList<>();
@@ -24,6 +29,8 @@ public class GameSelectorGUI{
     public Boolean Gaming=false;
     JLabel GameIcon;
     JLabel ExplainText;
+    JLabel TutorialText;
+    JLabel GameNameText;
 
     // 変更: 背景用ラベル -> 背景を描画するパネルに置き換え
     BackgroundPanel backgroundPanel;
@@ -47,10 +54,13 @@ public class GameSelectorGUI{
     final int ANIM_DURATION = 360; // ms
 
     public GameSelectorGUI(){
-         //ゲームのリストを作成する
-        Games.add(new Game("Re Skipper", "GameDatas\\reskipper\\Re Skipper.exe", "Images\\reskipper.png",null,"<html><body>宇宙空間の中<br />せまりくる敵と隕石を退治して<br />スコアを稼ぐゲームです</body></html>"));
-        Games.add(new Game("ええから成仏せぇ", "GameDatas\\eekara\\u1w20240812.exe", "Images\\eekara.png","backGround\\eekara_back.png","<html><body>蘇ってきたゾンビを<br />ハンマーでぶったたいて<br />地に還すゲームです</body></html>"));
-        Games.add(new Game("Imaginary", "GameDatas\\Imaginary\\Imaginary.exe", "Images\\imaginary.png",null,"<html><body>数学IIIの教材「複素数平面」を<BR>パク参考にしたアクションゲームです</body></html>"));
+         //ゲームのリストを作成する（CSVから読み込む。見つからない場合はデフォルトを追加）
+        // プロジェクトルート（実行ディレクトリ）に置く GamesMaster.csv を優先して読み込む
+        // フォーマット: name,path,image,background,explain
+        if (!loadGamesFromCSV("GameMaster.csv")) {
+            System.err.println("GamesMasterなし");
+            return;
+        }
 
         //maxmizeにしたい
         Dimension dim=Toolkit.getDefaultToolkit().getScreenSize();
@@ -67,38 +77,46 @@ public class GameSelectorGUI{
         // 背景用パネルを作成してフレームのコンテントに設定（背景は自動でリサイズして描画される）
         Image initialBg = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
         backgroundPanel = new BackgroundPanel(initialBg);
-        backgroundPanel.setLayout(new GridLayout(1,2));
+        // 左にゲーム一覧（下寄せ）、中央にアイコン等を置くレイアウトに変更
+        backgroundPanel.setLayout(new BorderLayout());
         ImageIcon cv = new ImageIcon("backGroundCover.png");
         Image cover = cv.getImage();
         backgroundPanelCover=new BackgroundPanel(cover);
         backgroundPanelCover.setLayout(new GridLayout(1,2));
+        backgroundPanel.setOverlayImage(cover);
         f.setContentPane(backgroundPanel);
         //f.setContentPane(backgroundPanelCover);
- 
+
         // 文字を配置する際、JFrame.addでは各方角に1つしか配置できないらしいのでPanelを使用する。
         JPanel textPanel=new JPanel();
         textPanel.setLayout(new BoxLayout(textPanel,BoxLayout.Y_AXIS));
         // 透明にして背景を透かす
         textPanel.setOpaque(false);
 
+        // 下寄せで縦方向に並べるため、先にスペースを作ってからラベルを追加する
         Stream<Game> GameStream=Games.stream();
+        textPanel.add(Box.createVerticalGlue()); // これでラベル群が下に詰まる
         GameStream.forEach(x -> {
-            JLabel GameText=new JLabel();
-            GameText.setText(x.name);
+            JLabel GameText=new JLabel(x.name);
             GameTexts.add(GameText);
             // 起動時の大きさを揃えるため SMALL_SIZE を初期フォントにする
             GameText.setFont(new Font("BIZ UDPゴシック",Font.PLAIN,SMALL_SIZE));
+            GameText.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT); // 左揃え
             textPanel.add(GameText);
+            textPanel.add(Box.createVerticalStrut(6)); // ラベル間の余白
         });
-        //Exit用
-        Game Exit=new Game("[Exit]","null","null","ウィンドウを閉じます",null);
-        Games.add(Exit);
+         //Exit用
+        // Game Exit=new Game("[Exit]","null","null","ウィンドウを閉じます",null);
+        // Games.add(Exit);
         JLabel GameText=new JLabel();
-        GameText.setText(Exit.name);
         GameTexts.add(GameText);
         // ここも SMALL_SIZE に揃える
         GameText.setFont(new Font("BIZ UDPゴシック",Font.PLAIN,SMALL_SIZE));
+        GameText.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         textPanel.add(GameText);
+        textPanel.add(Box.createVerticalStrut(6));
+        // 左側パネルに余白を与える（左下寄せで表示される）
+        textPanel.setBorder(BorderFactory.createEmptyBorder(24,24,24,24));
 
         // 初期化：サイズ配列
         int n = GameTexts.size();
@@ -148,27 +166,43 @@ public class GameSelectorGUI{
             }
         });
 
-        //右側
-         //右側
-        var iconPanel=new JPanel();
-        iconPanel.setOpaque(false); // 透過にする
-        GameIcon=new JLabel(Games.get(selectNumber).image);
-        iconPanel.add(GameIcon,BorderLayout.NORTH);
-        ExplainText=new JLabel();
-        ExplainText.setText(Games.get(selectNumber).Explain);
-        ExplainText.setFont(new Font("BIZ UDPゴシック",Font.PLAIN,36));
-        iconPanel.add(ExplainText,BorderLayout.SOUTH);
-        // // 右側（背景はもう Game.image を使うため、アイコン用ラベルは不要）
-        // var iconPanel=new JPanel(new BorderLayout());
-        // iconPanel.setOpaque(false); // 透過にする（背景を透かす）
-        // ExplainText=new JLabel();
-        // ExplainText.setText(Games.get(selectNumber).Explain);
-        // ExplainText.setFont(new Font("BIZ UDPゴシック",Font.PLAIN,36));
-        // iconPanel.add(ExplainText, BorderLayout.CENTER);
+        // 右側用パネル（右寄せ・下寄せで説明文を配置）
+        var iconPanel = new JPanel();
+        iconPanel.setOpaque(false); // 背景透過
+        iconPanel.setLayout(new BoxLayout(iconPanel, BoxLayout.Y_AXIS));
+        // 上側に伸びるスペースを入れて下寄せにする
+        iconPanel.add(Box.createVerticalGlue());
+
+        // アイコンは説明文の上に配置、右詰め
+        GameIcon = new JLabel(Games.get(selectNumber).image);
+        GameIcon.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
+        iconPanel.add(GameIcon);
+        iconPanel.add(Box.createVerticalStrut(12)); // アイコンと説明の間隔
+
+        // 説明文は下・右詰め
+        ExplainText = new JLabel(Games.get(selectNumber).Explain);
+        ExplainText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 36));
+        ExplainText.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
+        ExplainText.setHorizontalAlignment(JLabel.TRAILING);
+
+        // ゲーム名は説明文の下に右詰めで配置
+        GameNameText = new JLabel(Games.get(selectNumber).name);
+        GameNameText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 48));
+        GameNameText.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
+        GameNameText.setHorizontalAlignment(JLabel.TRAILING);
+
+        // 説明 → ゲーム名 の順で追加（ゲーム名が説明の下に来る）
+        iconPanel.add(ExplainText);
+        iconPanel.add(Box.createVerticalStrut(6));
+        iconPanel.add(GameNameText);
+
+        // パネル全体の余白（右下に余白を作る）
+        iconPanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         // 背景パネル上に他コンポーネントを追加（透過設定を維持）
-        backgroundPanel.add(textPanel);
-        backgroundPanel.add(iconPanel);
+        backgroundPanel.add(textPanel, BorderLayout.WEST);
+        // 右側に配置する
+        backgroundPanel.add(iconPanel, BorderLayout.EAST);
 
         // リサイズ時は背景を再描画
         f.addComponentListener(new ComponentAdapter() {
@@ -184,6 +218,83 @@ public class GameSelectorGUI{
 
         // 起動時に最初の選択が拡大するアニメーションを開始（OutCubic）
         startExpandAnimation(selectNumber);
+    }
+
+    private BackgroundPanel CreateBackgroundPanel(ImageIcon target){
+        return null;
+    }
+
+    // CSV を読み込んで Games リストを構築する
+    // 返り値: 成功したら true、失敗（ファイル無しやIO例外）は false
+    private boolean loadGamesFromCSV(String csvPath) {
+        Path p = Paths.get(csvPath);
+        if (!Files.exists(p)){
+            System.err.println("pathが不適切");
+            return false;
+        }
+        try (BufferedReader r = Files.newBufferedReader(p)) {
+            String line;
+            boolean first = true;
+            while ((line = r.readLine()) != null) {
+                // 空行はスキップ
+                if (line.trim().isEmpty()) continue;
+                // ヘッダー判定: 1 行目が "name" で始まる場合はヘッダーとしてスキップ
+                if (first) {
+                    String t = line.trim().toLowerCase();
+                    if (t.startsWith("name") || t.contains("path") && t.contains("image")) {
+                        first = false;
+                        continue;
+                    }
+                }
+                first = false;
+                ArrayList<String> cols = parseCSVLine(line);
+                // 必要列: name,path,image,background,explain （不足分は null で埋める）
+                String name = cols.size() > 0 ? cols.get(0) : "";
+                String path = cols.size() > 1 ? cols.get(1) : "null";
+                String image = cols.size() > 2 ? cols.get(2) : null;
+                String background = cols.size() > 3 ? cols.get(3) : null;
+                String explain = cols.size() > 4 ? cols.get(4) : null;
+                Games.add(new Game(name, path, image, background, explain));
+            }
+            return true;
+        } catch (IOException ex) {
+            System.err.println("GamesMaster.csv 読み込みエラー: " + ex.getMessage());
+            return false;
+        }
+    }
+
+    // 単純な CSV パーサ（ダブルクォートで囲まれたフィールドと "" エスケープをサポート）
+    private ArrayList<String> parseCSVLine(String line) {
+        ArrayList<String> out = new ArrayList<>();
+        StringBuilder cur = new StringBuilder();
+        boolean inQuotes = false;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (inQuotes) {
+                if (c == '"') {
+                    // 次も " ならエスケープ
+                    if (i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                        cur.append('"');
+                        i++;
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    cur.append(c);
+                }
+            } else {
+                if (c == '"') {
+                    inQuotes = true;
+                } else if (c == ',') {
+                    out.add(cur.toString());
+                    cur.setLength(0);
+                } else {
+                    cur.append(c);
+                }
+            }
+        }
+        out.add(cur.toString());
+        return out;
     }
 
     // 選択が変わったときにターゲットサイズを更新し、拡大はアニメーション、縮小は即時反映
@@ -203,6 +314,7 @@ public class GameSelectorGUI{
 
         // 説明やアイコンは即時更新（テキストの拡大はアニメーション）
         ExplainText.setText(Games.get(selectNumber).Explain);
+        GameNameText.setText(Games.get(selectNumber).name);
         if(selectNumber==GameTexts.size()-1) {
             GameIcon.setIcon(null);
             // Exit または無効時は背景をクリア
@@ -248,15 +360,13 @@ public class GameSelectorGUI{
     public void PushUpAction(){
         if(selectNumber>0) {
             selectNumber--;
-            System.out.println("SelectNumber: "+ selectNumber);
             updateSelectionTargets();
         }
     }
 
     public void PushDownAction(){
-        if(selectNumber < GameTexts.size()-1) {
+        if(selectNumber < GameTexts.size()-2) {
             selectNumber++;
-            System.out.println("SelectNumber: "+ selectNumber);
             updateSelectionTargets();
         }
     }
@@ -341,30 +451,55 @@ class BaseFrame extends JFrame implements  KeyListener{
 }
 
 // 背景描画用パネル（コンポーネントの背面に画像を描く）
+// base（ゲームの背景）と cover（backGroundCover.png）を合成して表示できるように拡張
 class BackgroundPanel extends JPanel {
-    private Image backgroundImage;
+    private Image backgroundImage; // base image
+    private Image overlayImage;    // cover image (backGroundCover.png)
 
     public BackgroundPanel(Image img) {
         this.backgroundImage = img;
-        // パネル自体は透明にしておく（子コンポーネントの透過を利用）
         setOpaque(false);
     }
 
+    // 単体で背景を設定
     public void setBackgroundImage(Image img) {
         this.backgroundImage = img;
         repaint();
     }
 
+    // 単体でオーバーレイを設定（backGroundCover.png）
+    public void setOverlayImage(Image img) {
+        this.overlayImage = img;
+        repaint();
+    }
+
+    // base と overlay を同時に設定して合成表示する（両方 null 可）
+    public void setBackgroundWithOverlay(Image base, Image overlay) {
+        this.backgroundImage = base;
+        this.overlayImage = overlay;
+        repaint();
+    }
+
     @Override
     protected void paintComponent(java.awt.Graphics g) {
-        // 先に親の処理（必要なら背景色）を行う
         super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g.create();
+        // 高品質なスケーリング
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        int w = getWidth();
+        int h = getHeight();
+
+        // base を引き伸ばして描画
         if (backgroundImage != null) {
-            // パネルサイズに合わせてスケーリングして描画（高品質レンダリングは必要に応じて追加）
-            int w = getWidth();
-            int h = getHeight();
-            g.drawImage(backgroundImage, 0, 0, w, h, this);
+            g2.drawImage(backgroundImage, 0, 0, w, h, this);
         }
+
+        // overlay を上に描画（透明度情報があれば透過合成される）
+        if (overlayImage != null) {
+            g2.drawImage(overlayImage, 0, 0, w, h, this);
+        }
+
+        g2.dispose();
     }
 }
 
