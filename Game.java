@@ -25,7 +25,5 @@ public class Game {
         }
 
         this.Explain=Exp;
-
-        System.out.println("name:" + this.name + " path:" + this.path + " imagePath:" + this.imagePath + " backPath:" + this.backGround + " exp:" + Explain);
     }
 }

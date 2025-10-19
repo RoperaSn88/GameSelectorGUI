@@ -1,5 +1,6 @@
 // ...existing code...
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -102,6 +103,7 @@ public class GameSelectorGUI{
             // 起動時の大きさを揃えるため SMALL_SIZE を初期フォントにする
             GameText.setFont(new Font("BIZ UDPゴシック",Font.PLAIN,SMALL_SIZE));
             GameText.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT); // 左揃え
+            GameText.setForeground(Color.white);
             textPanel.add(GameText);
             textPanel.add(Box.createVerticalStrut(6)); // ラベル間の余白
         });
@@ -113,6 +115,7 @@ public class GameSelectorGUI{
         // ここも SMALL_SIZE に揃える
         GameText.setFont(new Font("BIZ UDPゴシック",Font.PLAIN,SMALL_SIZE));
         GameText.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        GameText.setForeground(Color.WHITE);
         textPanel.add(GameText);
         textPanel.add(Box.createVerticalStrut(6));
         // 左側パネルに余白を与える（左下寄せで表示される）
@@ -184,12 +187,14 @@ public class GameSelectorGUI{
         ExplainText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 36));
         ExplainText.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
         ExplainText.setHorizontalAlignment(JLabel.TRAILING);
+        ExplainText.setForeground(Color.WHITE);
 
         // ゲーム名は説明文の下に右詰めで配置
         GameNameText = new JLabel(Games.get(selectNumber).name);
-        GameNameText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 48));
+        GameNameText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 64));
         GameNameText.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
         GameNameText.setHorizontalAlignment(JLabel.TRAILING);
+        GameNameText.setForeground(Color.WHITE);
 
         // 説明 → ゲーム名 の順で追加（ゲーム名が説明の下に来る）
         iconPanel.add(ExplainText);
