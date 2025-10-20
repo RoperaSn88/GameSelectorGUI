@@ -189,6 +189,13 @@ public class GameSelectorGUI{
         ExplainText.setHorizontalAlignment(JLabel.TRAILING);
         ExplainText.setForeground(Color.WHITE);
 
+        //チュートリアル
+        TutorialText = new JLabel(Games.get(selectNumber).Tutorial);
+        TutorialText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
+        TutorialText.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
+        TutorialText.setHorizontalAlignment(JLabel.TRAILING);
+        TutorialText.setForeground(Color.WHITE);
+
         // ゲーム名は説明文の下に右詰めで配置
         GameNameText = new JLabel(Games.get(selectNumber).name);
         GameNameText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 64));
@@ -199,6 +206,7 @@ public class GameSelectorGUI{
         // 説明 → ゲーム名 の順で追加（ゲーム名が説明の下に来る）
         iconPanel.add(ExplainText);
         iconPanel.add(Box.createVerticalStrut(6));
+        iconPanel.add(TutorialText);
         iconPanel.add(GameNameText);
 
         // パネル全体の余白（右下に余白を作る）
@@ -259,7 +267,8 @@ public class GameSelectorGUI{
                 String image = cols.size() > 2 ? cols.get(2) : null;
                 String background = cols.size() > 3 ? cols.get(3) : null;
                 String explain = cols.size() > 4 ? cols.get(4) : null;
-                Games.add(new Game(name, path, image, background, explain));
+                String tut = cols.size() > 5 ? cols.get(5) : null;
+                Games.add(new Game(name, path, image, background, explain,tut));
             }
             return true;
         } catch (IOException ex) {
@@ -319,6 +328,7 @@ public class GameSelectorGUI{
 
         // 説明やアイコンは即時更新（テキストの拡大はアニメーション）
         ExplainText.setText(Games.get(selectNumber).Explain);
+        TutorialText.setText(Games.get(selectNumber).Tutorial);
         GameNameText.setText(Games.get(selectNumber).name);
         if(selectNumber==GameTexts.size()-1) {
             GameIcon.setIcon(null);

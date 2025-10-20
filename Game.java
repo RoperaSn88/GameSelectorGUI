@@ -8,8 +8,9 @@ public class Game {
     public ImageIcon image;
     public ImageIcon backGround;
     public String Explain;
+    public String Tutorial;
 
-    public Game(String name,String path,String imagePath,String backPath,String Exp){
+    public Game(String name,String path,String imagePath,String backPath,String Exp,String tu){
         this.name=name;
         this.path=path;
         this.imagePath=imagePath;
@@ -25,5 +26,6 @@ public class Game {
         }
 
         this.Explain=Exp;
+        this.Tutorial = tu;
     }
 }
