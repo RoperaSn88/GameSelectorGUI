@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.stream.Stream;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.MediaTracker;
 import java.awt.Image;
 import java.awt.Graphics2D;
@@ -53,6 +55,7 @@ public class GameSelectorGUI{
     final int ANIM_DURATION = 360; // ms
     final int FADE_DURATION = 480; // ms
     Timer fadeTimer;
+    private volatile boolean exiting = false;
 
     public GameSelectorGUI(){
          //ゲームのリストを作成する（CSVから読み込む。見つからない場合はデフォルトを追加）
@@ -72,7 +75,7 @@ public class GameSelectorGUI{
         //ウィンドウの作成
         var f = new BaseFrame("GameSelectorGUI",this);
         mainFrame = f;
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         f.setSize(width, height);
         f.setLayout(new GridLayout(1,2));
 
@@ -81,6 +84,7 @@ public class GameSelectorGUI{
         Image initialVideo = Games.get(selectNumber).backgroundVideo != null ? Games.get(selectNumber).backgroundVideo.getImage() : null;
         backgroundPanel = new BackgroundPanel(initialBg);
         backgroundPanel.setBackgroundMedia(initialBg, initialVideo);
+        backgroundPanel.setForegroundOverlayImage(loadForegroundOverlayImage());
         // 背景の上にゲーム名のみを表示
         backgroundPanel.setLayout(new BorderLayout());
         f.setContentPane(backgroundPanel);
@@ -189,9 +193,16 @@ public class GameSelectorGUI{
                 backgroundPanel.repaint();
             }
         });
+        f.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                RequestApplicationExit();
+            }
+        });
 
         f.setVisible(true);
         f.addKeyListener(f);
+        SwingUtilities.invokeLater(() -> animateDarkOverlay(1f, 0f, FADE_DURATION, null));
 
         // 起動時に最初の選択が拡大するアニメーションを開始（OutCubic）
         startExpandAnimation(selectNumber);
@@ -363,6 +374,20 @@ public class GameSelectorGUI{
         });
     }
 
+    public void RequestApplicationExit(){
+        if(Gaming || exiting) return;
+        exiting = true;
+        animateDarkOverlay(0f, 1f, FADE_DURATION, () -> System.exit(0));
+    }
+
+    private Image loadForegroundOverlayImage() {
+        Path overlayPath = Paths.get("backGroundCover.png");
+        if (!Files.exists(overlayPath)) {
+            return null;
+        }
+        return new ImageIcon(overlayPath.toString()).getImage();
+    }
+
     private void animateDarkOverlay(float startAlpha, float endAlpha, int durationMs, Runnable onComplete){
         if(backgroundPanel == null){
             if(onComplete != null) onComplete.run();
@@ -435,6 +460,7 @@ public class GameSelectorGUI{
 class BackgroundPanel extends JPanel {
     private Image backgroundImage;
     private Image backgroundVideoImage;
+    private Image foregroundOverlayImage;
     private float darkOverlayAlpha = 0f;
 
     public BackgroundPanel(Image img) {
@@ -460,6 +486,11 @@ class BackgroundPanel extends JPanel {
         repaint();
     }
 
+    public void setForegroundOverlayImage(Image img) {
+        this.foregroundOverlayImage = img;
+        repaint();
+    }
+
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
@@ -473,12 +504,23 @@ class BackgroundPanel extends JPanel {
         if (drawTarget != null) {
             g2.drawImage(drawTarget, 0, 0, w, h, this);
         }
-        if (darkOverlayAlpha > 0f) {
-            g2.setComposite(AlphaComposite.SrcOver.derive(darkOverlayAlpha));
+        g2.dispose();
+    }
+
+    @Override
+    public void paint(java.awt.Graphics g) {
+        super.paint(g);
+        if (darkOverlayAlpha <= 0f) return;
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setComposite(AlphaComposite.SrcOver.derive(darkOverlayAlpha));
+        int w = getWidth();
+        int h = getHeight();
+        if (foregroundOverlayImage != null) {
+            g2.drawImage(foregroundOverlayImage, 0, 0, w, h, this);
+        } else {
             g2.setColor(Color.BLACK);
             g2.fillRect(0, 0, w, h);
         }
-
         g2.dispose();
     }
 }

@@ -49,7 +49,7 @@ class BaseFrame extends JFrame implements KeyListener{
                 break;
             case KeyEvent.VK_ESCAPE:
                 if (!selectorGUI.Gaming) {
-                    System.exit(0);
+                    selectorGUI.RequestApplicationExit();
                 }
                 break;
         }
