@@ -55,6 +55,7 @@ public class GameSelectorGUI{
     int animEndSize = 0;
     final int ANIM_DURATION = 360; // ms
     final int FADE_DURATION = 480; // ms
+    private static final String OVERLAY_IMAGE_PATH = "backGroundCover.png";
     Timer fadeTimer;
     private volatile boolean exiting = false;
 
@@ -384,7 +385,7 @@ public class GameSelectorGUI{
     }
 
     private Image loadForegroundOverlayImage() {
-        Path overlayPath = Paths.get("backGroundCover.png");
+        Path overlayPath = Paths.get(OVERLAY_IMAGE_PATH);
         if (!Files.exists(overlayPath)) {
             return null;
         }
