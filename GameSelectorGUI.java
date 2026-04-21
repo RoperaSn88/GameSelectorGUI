@@ -52,6 +52,7 @@ public class GameSelectorGUI{
     int animEndSize = 0;
     final int ANIM_DURATION = 360; // ms
     final int FADE_DURATION = 480; // ms
+    Timer fadeTimer;
 
     public GameSelectorGUI(){
          //ゲームのリストを作成する（CSVから読み込む。見つからない場合はデフォルトを追加）
@@ -353,12 +354,11 @@ public class GameSelectorGUI{
                     Process process=builder.start();
                     process.waitFor();
                 } catch (Exception e) {
-                    System.out.println("Cant Open exe file");
+                    System.out.println("Failed to launch game at path: " + GetPath + " (" + e.getMessage() + ")");
                 } finally {
                     SwingUtilities.invokeLater(() -> animateDarkOverlay(1f, 0f, FADE_DURATION, () -> Gaming=false));
                 }
             }, "game-runner-thread");
-            gameThread.setDaemon(true);
             gameThread.start();
         });
     }
@@ -374,8 +374,11 @@ public class GameSelectorGUI{
             if(onComplete != null) onComplete.run();
             return;
         }
+        if(fadeTimer != null && fadeTimer.isRunning()){
+            fadeTimer.stop();
+        }
         final long startedAt = System.currentTimeMillis();
-        Timer fadeTimer = new Timer(TIMER_DELAY, null);
+        fadeTimer = new Timer(TIMER_DELAY, null);
         fadeTimer.addActionListener(e -> {
             long elapsed = System.currentTimeMillis() - startedAt;
             float t = Math.min(1f, Math.max(0f, elapsed / (float)durationMs));
