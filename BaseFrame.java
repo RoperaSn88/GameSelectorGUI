@@ -48,7 +48,9 @@ class BaseFrame extends JFrame implements KeyListener{
                 if (!selectorGUI.Gaming)selectorGUI.OpenGameDetailWindow();
                 break;
             case KeyEvent.VK_ESCAPE:
-                if (!selectorGUI.Gaming)System.exit(0);
+                if (!selectorGUI.Gaming) {
+                    System.exit(0);
+                }
                 break;
         }
     }
