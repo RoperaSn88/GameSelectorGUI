@@ -27,16 +27,12 @@ public class GameSelectorGUI{
     ArrayList<JLabel> GameTexts=new ArrayList<>();
     int selectNumber=0;
     public Boolean Gaming=false;
-    JLabel GameIcon;
-    JLabel ExplainText;
-    JLabel TutorialText;
     JLabel GameNameText;
     BaseFrame mainFrame;
     GameDetailDialog detailDialog;
 
     // 変更: 背景用ラベル -> 背景を描画するパネルに置き換え
     BackgroundPanel backgroundPanel;
-    BackgroundPanel backgroundPanelCover;
     
     // アニメーション用
     int[] currentSizes;
@@ -79,16 +75,12 @@ public class GameSelectorGUI{
 
         // 背景用パネルを作成してフレームのコンテントに設定（背景は自動でリサイズして描画される）
         Image initialBg = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
+        Image initialVideo = Games.get(selectNumber).backgroundVideo != null ? Games.get(selectNumber).backgroundVideo.getImage() : null;
         backgroundPanel = new BackgroundPanel(initialBg);
-        // 左にゲーム一覧（下寄せ）、中央にアイコン等を置くレイアウトに変更
+        backgroundPanel.setBackgroundMedia(initialBg, initialVideo);
+        // 背景の上にゲーム名のみを表示
         backgroundPanel.setLayout(new BorderLayout());
-        ImageIcon cv = new ImageIcon("backGroundCover.png");
-        Image cover = cv.getImage();
-        backgroundPanelCover=new BackgroundPanel(cover);
-        backgroundPanelCover.setLayout(new GridLayout(1,2));
-        backgroundPanel.setOverlayImage(cover);
         f.setContentPane(backgroundPanel);
-        //f.setContentPane(backgroundPanelCover);
 
         // 文字を配置する際、JFrame.addでは各方角に1つしか配置できないらしいのでPanelを使用する。
         JPanel textPanel=new JPanel();
@@ -171,53 +163,20 @@ public class GameSelectorGUI{
             }
         });
 
-        // 右側用パネル（右寄せ・下寄せで説明文を配置）
-        var iconPanel = new JPanel();
-        iconPanel.setOpaque(false); // 背景透過
-        iconPanel.setLayout(new BoxLayout(iconPanel, BoxLayout.Y_AXIS));
-        // 上側に伸びるスペースを入れて下寄せにする
-        iconPanel.add(Box.createVerticalGlue());
-
-        // アイコンは説明文の上に配置、右詰め
-        GameIcon = new JLabel(Games.get(selectNumber).image);
-        GameIcon.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
-        iconPanel.add(GameIcon);
-        iconPanel.add(Box.createVerticalStrut(12)); // アイコンと説明の間隔
-
-        // 説明文は下・右詰め
-        ExplainText = new JLabel(Games.get(selectNumber).Explain);
-        ExplainText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 36));
-        ExplainText.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
-        ExplainText.setHorizontalAlignment(JLabel.TRAILING);
-        ExplainText.setForeground(Color.WHITE);
-
-        //チュートリアル
-        TutorialText = new JLabel(Games.get(selectNumber).Tutorial);
-        TutorialText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
-        TutorialText.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
-        TutorialText.setHorizontalAlignment(JLabel.TRAILING);
-        TutorialText.setForeground(Color.WHITE);
-
-        // ゲーム名は説明文の下に右詰めで配置
+        // ゲーム名のみ表示
         GameNameText = new JLabel(Games.get(selectNumber).name);
         GameNameText.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 64));
         GameNameText.setAlignmentX(java.awt.Component.RIGHT_ALIGNMENT);
         GameNameText.setHorizontalAlignment(JLabel.TRAILING);
         GameNameText.setForeground(Color.WHITE);
-
-        // 説明 → ゲーム名 の順で追加（ゲーム名が説明の下に来る）
-        iconPanel.add(ExplainText);
-        iconPanel.add(Box.createVerticalStrut(6));
-        iconPanel.add(TutorialText);
-        iconPanel.add(GameNameText);
-
-        // パネル全体の余白（右下に余白を作る）
-        iconPanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        var namePanel = new JPanel();
+        namePanel.setOpaque(false);
+        namePanel.setLayout(new BorderLayout());
+        namePanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        namePanel.add(GameNameText, BorderLayout.SOUTH);
 
         // 背景パネル上に他コンポーネントを追加（透過設定を維持）
-        backgroundPanel.add(textPanel, BorderLayout.WEST);
-        // 右側に配置する
-        backgroundPanel.add(iconPanel, BorderLayout.EAST);
+        backgroundPanel.add(namePanel, BorderLayout.EAST);
 
         // リサイズ時は背景を再描画
         f.addComponentListener(new ComponentAdapter() {
@@ -263,14 +222,15 @@ public class GameSelectorGUI{
                 }
                 first = false;
                 ArrayList<String> cols = parseCSVLine(line);
-                // 必要列: name,path,image,background,explain （不足分は null で埋める）
+                // 必要列: name,path,image,background,explain,tutorial,backgroundVideo （不足分は null で埋める）
                 String name = cols.size() > 0 ? cols.get(0) : "";
                 String path = cols.size() > 1 ? cols.get(1) : "null";
                 String image = cols.size() > 2 ? cols.get(2) : null;
                 String background = cols.size() > 3 ? cols.get(3) : null;
                 String explain = cols.size() > 4 ? cols.get(4) : null;
                 String tut = cols.size() > 5 ? cols.get(5) : null;
-                Games.add(new Game(name, path, image, background, explain,tut));
+                String backgroundVideo = cols.size() > 6 ? cols.get(6) : null;
+                Games.add(new Game(name, path, image, background, explain, tut, backgroundVideo));
             }
             return true;
         } catch (IOException ex) {
@@ -328,20 +288,12 @@ public class GameSelectorGUI{
             targetSizes[i] = (i==selectNumber) ? SELECT_SIZE : SMALL_SIZE;
         }
 
-        // 説明やアイコンは即時更新（テキストの拡大はアニメーション）
-        ExplainText.setText(Games.get(selectNumber).Explain);
-        TutorialText.setText(Games.get(selectNumber).Tutorial);
+        // 通常ウィンドウはゲーム名のみ更新
         GameNameText.setText(Games.get(selectNumber).name);
-        if(selectNumber==GameTexts.size()-1) {
-            GameIcon.setIcon(null);
-            // Exit または無効時は背景をクリア
-            backgroundPanel.setBackgroundImage(null);
-        }
-        else {
-            GameIcon.setIcon(Games.get(selectNumber).image);
-            // 背景を選択中のゲームの backGround に更新
-            backgroundPanel.setBackgroundImage(Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null);
-        }
+        // 背景を選択中のゲームの backGround / 背景映像に更新
+        Image background = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
+        Image backgroundVideo = Games.get(selectNumber).backgroundVideo != null ? Games.get(selectNumber).backgroundVideo.getImage() : null;
+        backgroundPanel.setBackgroundMedia(background, backgroundVideo);
 
         // 前回選択されていた項目は即座に小さくする（アニメーション不要）
         if (previous >= 0 && previous != selectNumber) {
@@ -382,7 +334,7 @@ public class GameSelectorGUI{
     }
 
     public void PushDownAction(){
-        if(selectNumber < GameTexts.size()-2) {
+        if(selectNumber < Games.size()-1) {
             selectNumber++;
             updateSelectionTargets();
         }
@@ -390,9 +342,6 @@ public class GameSelectorGUI{
 
     public void StartGame(){
         if(!Gaming){
-            if(selectNumber==GameTexts.size()-1) {
-                System.exit(1);
-            }
             String GetPath=Games.get(selectNumber).path;
             try {
                 ProcessBuilder builder = new ProcessBuilder(GetPath);
@@ -445,33 +394,27 @@ public class GameSelectorGUI{
     }
 }
 
-// 背景描画用パネル（コンポーネントの背面に画像を描く）
-// base（ゲームの背景）と cover（backGroundCover.png）を合成して表示できるように拡張
+// 背景描画用パネル
+// static 背景画像、または GIF などの背景映像（ループ再生）を表示する
 class BackgroundPanel extends JPanel {
-    private Image backgroundImage; // base image
-    private Image overlayImage;    // cover image (backGroundCover.png)
+    private Image backgroundImage;
+    private Image backgroundVideoImage;
 
     public BackgroundPanel(Image img) {
         this.backgroundImage = img;
         setOpaque(false);
     }
 
-    // 単体で背景を設定
+    // 単体で背景を設定（静止画）
     public void setBackgroundImage(Image img) {
         this.backgroundImage = img;
         repaint();
     }
 
-    // 単体でオーバーレイを設定（backGroundCover.png）
-    public void setOverlayImage(Image img) {
-        this.overlayImage = img;
-        repaint();
-    }
-
-    // base と overlay を同時に設定して合成表示する（両方 null 可）
-    public void setBackgroundWithOverlay(Image base, Image overlay) {
-        this.backgroundImage = base;
-        this.overlayImage = overlay;
+    // 背景と背景映像を同時に設定（映像があれば映像を優先表示）
+    public void setBackgroundMedia(Image background, Image backgroundVideo) {
+        this.backgroundImage = background;
+        this.backgroundVideoImage = backgroundVideo;
         repaint();
     }
 
@@ -484,14 +427,9 @@ class BackgroundPanel extends JPanel {
         int w = getWidth();
         int h = getHeight();
 
-        // base を引き伸ばして描画
-        if (backgroundImage != null) {
-            g2.drawImage(backgroundImage, 0, 0, w, h, this);
-        }
-
-        // overlay を上に描画（透明度情報があれば透過合成される）
-        if (overlayImage != null) {
-            g2.drawImage(overlayImage, 0, 0, w, h, this);
+        Image drawTarget = backgroundVideoImage != null ? backgroundVideoImage : backgroundImage;
+        if (drawTarget != null) {
+            g2.drawImage(drawTarget, 0, 0, w, h, this);
         }
 
         g2.dispose();
