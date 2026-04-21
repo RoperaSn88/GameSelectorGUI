@@ -36,6 +36,7 @@ public class GameSelectorGUI{
 
     // 変更: 背景用ラベル -> 背景を描画するパネルに置き換え
     BackgroundPanel backgroundPanel;
+    OverlayPane overlayPane;
     
     // アニメーション用
     int[] currentSizes;
@@ -84,10 +85,12 @@ public class GameSelectorGUI{
         Image initialVideo = Games.get(selectNumber).backgroundVideo != null ? Games.get(selectNumber).backgroundVideo.getImage() : null;
         backgroundPanel = new BackgroundPanel(initialBg);
         backgroundPanel.setBackgroundMedia(initialBg, initialVideo);
-        backgroundPanel.setForegroundOverlayImage(loadForegroundOverlayImage());
         // 背景の上にゲーム名のみを表示
         backgroundPanel.setLayout(new BorderLayout());
         f.setContentPane(backgroundPanel);
+        overlayPane = new OverlayPane(loadForegroundOverlayImage());
+        f.setGlassPane(overlayPane);
+        overlayPane.setVisible(true);
 
         // 文字を配置する際、JFrame.addでは各方角に1つしか配置できないらしいのでPanelを使用する。
         JPanel textPanel=new JPanel();
@@ -389,13 +392,13 @@ public class GameSelectorGUI{
     }
 
     private void animateDarkOverlay(float startAlpha, float endAlpha, int durationMs, Runnable onComplete){
-        if(backgroundPanel == null){
+        if(overlayPane == null){
             if(onComplete != null) onComplete.run();
             return;
         }
-        backgroundPanel.setDarkOverlayAlpha(startAlpha);
+        overlayPane.setOverlayAlpha(startAlpha);
         if(durationMs <= 0){
-            backgroundPanel.setDarkOverlayAlpha(endAlpha);
+            overlayPane.setOverlayAlpha(endAlpha);
             if(onComplete != null) onComplete.run();
             return;
         }
@@ -408,10 +411,10 @@ public class GameSelectorGUI{
             long elapsed = System.currentTimeMillis() - startedAt;
             float t = Math.min(1f, Math.max(0f, elapsed / (float)durationMs));
             float alpha = startAlpha + (endAlpha - startAlpha) * t;
-            backgroundPanel.setDarkOverlayAlpha(alpha);
+            overlayPane.setOverlayAlpha(alpha);
             if(t >= 1f){
                 fadeTimer.stop();
-                backgroundPanel.setDarkOverlayAlpha(endAlpha);
+                overlayPane.setOverlayAlpha(endAlpha);
                 if(onComplete != null) onComplete.run();
             }
         });
@@ -460,8 +463,6 @@ public class GameSelectorGUI{
 class BackgroundPanel extends JPanel {
     private Image backgroundImage;
     private Image backgroundVideoImage;
-    private Image foregroundOverlayImage;
-    private float darkOverlayAlpha = 0f;
 
     public BackgroundPanel(Image img) {
         this.backgroundImage = img;
@@ -481,16 +482,6 @@ class BackgroundPanel extends JPanel {
         repaint();
     }
 
-    public void setDarkOverlayAlpha(float alpha) {
-        this.darkOverlayAlpha = Math.max(0f, Math.min(1f, alpha));
-        repaint();
-    }
-
-    public void setForegroundOverlayImage(Image img) {
-        this.foregroundOverlayImage = img;
-        repaint();
-    }
-
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
@@ -506,17 +497,32 @@ class BackgroundPanel extends JPanel {
         }
         g2.dispose();
     }
+}
+
+class OverlayPane extends JComponent {
+    private final Image overlayImage;
+    private float overlayAlpha = 0f;
+
+    public OverlayPane(Image overlayImage) {
+        this.overlayImage = overlayImage;
+        setOpaque(false);
+    }
+
+    public void setOverlayAlpha(float alpha) {
+        this.overlayAlpha = Math.max(0f, Math.min(1f, alpha));
+        repaint();
+    }
 
     @Override
-    public void paint(java.awt.Graphics g) {
-        super.paint(g);
-        if (darkOverlayAlpha <= 0f) return;
+    protected void paintComponent(java.awt.Graphics g) {
+        super.paintComponent(g);
+        if (overlayAlpha <= 0f) return;
         Graphics2D g2 = (Graphics2D) g.create();
-        g2.setComposite(AlphaComposite.SrcOver.derive(darkOverlayAlpha));
+        g2.setComposite(AlphaComposite.SrcOver.derive(overlayAlpha));
         int w = getWidth();
         int h = getHeight();
-        if (foregroundOverlayImage != null) {
-            g2.drawImage(foregroundOverlayImage, 0, 0, w, h, this);
+        if (overlayImage != null) {
+            g2.drawImage(overlayImage, 0, 0, w, h, this);
         } else {
             g2.setColor(Color.BLACK);
             g2.fillRect(0, 0, w, h);
