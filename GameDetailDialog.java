@@ -61,9 +61,9 @@ class GameDetailDialog extends JDialog {
         infoPanel.add(Box.createVerticalGlue());
 
         JPanel guidePanel = new JPanel(new BorderLayout());
-        guidePanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
-        JLabel guideLabel = new JLabel("<html>スペースキーを押してゲームを開始します（Enterキーでも開始できます）。<br/>Escキーでウィンドウを閉じます</html>");
-        guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
+        guidePanel.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        JLabel guideLabel = new JLabel("スペースキーでゲームを開始します。Escキーでウィンドウを閉じます。");
+        guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 20));
         guideLabel.setHorizontalAlignment(JLabel.CENTER);
         guidePanel.add(guideLabel, BorderLayout.CENTER);
 
