@@ -21,6 +21,7 @@ import java.awt.Image;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.AlphaComposite;
+import java.awt.Rectangle;
 import javax.swing.*;
 import java.io.*;
 import java.nio.file.*;
@@ -37,7 +38,7 @@ public class GameSelectorGUI{
 
     // 変更: 背景用ラベル -> 背景を描画するパネルに置き換え
     BackgroundPanel backgroundPanel;
-    OverlayPane overlayPane;
+    ImageLayerPanel backGroundPanelLayer;
     
     // アニメーション用
     int[] currentSizes;
@@ -56,7 +57,8 @@ public class GameSelectorGUI{
     int animEndSize = 0;
     final int ANIM_DURATION = 360; // ms
     final int FADE_DURATION = 480; // ms
-    private static final String OVERLAY_IMAGE_PATH = "backGroundCover.png";
+    private static final String BACKGROUND_COVER_IMAGE_PATH = "backGroundCover.png";
+    private static final String BACKGROUND_PANEL_IMAGE_PATH = "backGroundPanel.png";
     Timer fadeTimer;
     private final AtomicBoolean exiting = new AtomicBoolean(false);
 
@@ -87,12 +89,10 @@ public class GameSelectorGUI{
         Image initialVideo = Games.get(selectNumber).backgroundVideo != null ? Games.get(selectNumber).backgroundVideo.getImage() : null;
         backgroundPanel = new BackgroundPanel(initialBg);
         backgroundPanel.setBackgroundMedia(initialBg, initialVideo);
-        // 背景の上にゲーム名のみを表示
         backgroundPanel.setLayout(new BorderLayout());
-        f.setContentPane(backgroundPanel);
-        overlayPane = new OverlayPane(loadForegroundOverlayImage());
-        f.setGlassPane(overlayPane);
-        overlayPane.setVisible(true);
+        var layeredRoot = new JLayeredPane();
+        layeredRoot.setLayout(null);
+        f.setContentPane(layeredRoot);
 
         // 文字を配置する際、JFrame.addでは各方角に1つしか配置できないらしいのでPanelを使用する。
         JPanel textPanel=new JPanel();
@@ -187,8 +187,24 @@ public class GameSelectorGUI{
         namePanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
         namePanel.add(GameNameText, BorderLayout.SOUTH);
 
-        // 背景パネル上に他コンポーネントを追加（透過設定を維持）
-        backgroundPanel.add(namePanel, BorderLayout.EAST);
+        var gameNameLayer = new JPanel(new BorderLayout());
+        gameNameLayer.setOpaque(false);
+        gameNameLayer.add(namePanel, BorderLayout.EAST);
+
+        var textLayer = new JPanel(new BorderLayout());
+        textLayer.setOpaque(false);
+        textLayer.add(textPanel, BorderLayout.WEST);
+
+        var backGroundCoverLayer = new ImageLayerPanel(loadImage(BACKGROUND_COVER_IMAGE_PATH));
+        backGroundPanelLayer = new ImageLayerPanel(loadImage(BACKGROUND_PANEL_IMAGE_PATH));
+        backGroundPanelLayer.setLayerAlpha(1f);
+
+        layeredRoot.add(backgroundPanel, Integer.valueOf(0));
+        layeredRoot.add(backGroundCoverLayer, Integer.valueOf(100));
+        layeredRoot.add(gameNameLayer, Integer.valueOf(200));
+        layeredRoot.add(textLayer, Integer.valueOf(300));
+        layeredRoot.add(backGroundPanelLayer, Integer.valueOf(400));
+        updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
 
         // リサイズ時は背景を再描画
         f.addComponentListener(new ComponentAdapter() {
@@ -196,6 +212,7 @@ public class GameSelectorGUI{
             public void componentResized(ComponentEvent e) {
                 backgroundPanel.revalidate();
                 backgroundPanel.repaint();
+                updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
             }
         });
         f.addWindowListener(new WindowAdapter() {
@@ -388,22 +405,29 @@ public class GameSelectorGUI{
         animateDarkOverlay(0f, 1f, FADE_DURATION, () -> System.exit(0));
     }
 
-    private Image loadForegroundOverlayImage() {
-        Path overlayPath = Paths.get(OVERLAY_IMAGE_PATH);
+    private Image loadImage(String path) {
+        Path overlayPath = Paths.get(path);
         if (!Files.exists(overlayPath)) {
             return null;
         }
         return new ImageIcon(overlayPath.toString()).getImage();
     }
 
+    private void updateLayerBounds(JLayeredPane root, JComponent... layers) {
+        Rectangle bounds = root.getBounds();
+        for (JComponent layer : layers) {
+            layer.setBounds(0, 0, bounds.width, bounds.height);
+        }
+    }
+
     private void animateDarkOverlay(float startAlpha, float endAlpha, int durationMs, Runnable onComplete){
-        if(overlayPane == null){
+        if(backGroundPanelLayer == null){
             if(onComplete != null) onComplete.run();
             return;
         }
-        overlayPane.setOverlayAlpha(startAlpha);
+        backGroundPanelLayer.setLayerAlpha(startAlpha);
         if(durationMs <= 0){
-            overlayPane.setOverlayAlpha(endAlpha);
+            backGroundPanelLayer.setLayerAlpha(endAlpha);
             if(onComplete != null) onComplete.run();
             return;
         }
@@ -416,10 +440,10 @@ public class GameSelectorGUI{
             long elapsed = System.currentTimeMillis() - startedAt;
             float t = Math.min(1f, Math.max(0f, elapsed / (float)durationMs));
             float alpha = startAlpha + (endAlpha - startAlpha) * t;
-            overlayPane.setOverlayAlpha(alpha);
+            backGroundPanelLayer.setLayerAlpha(alpha);
             if(t >= 1f){
                 fadeTimer.stop();
-                overlayPane.setOverlayAlpha(endAlpha);
+                backGroundPanelLayer.setLayerAlpha(endAlpha);
                 if(onComplete != null) onComplete.run();
             }
         });
@@ -468,6 +492,7 @@ public class GameSelectorGUI{
 class BackgroundPanel extends JPanel {
     private Image backgroundImage;
     private Image backgroundVideoImage;
+    private float darkOverlayAlpha = 0f;
 
     public BackgroundPanel(Image img) {
         this.backgroundImage = img;
@@ -487,6 +512,11 @@ class BackgroundPanel extends JPanel {
         repaint();
     }
 
+    public void setDarkOverlayAlpha(float alpha) {
+        this.darkOverlayAlpha = Math.max(0f, Math.min(1f, alpha));
+        repaint();
+    }
+
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
@@ -500,38 +530,38 @@ class BackgroundPanel extends JPanel {
         if (drawTarget != null) {
             g2.drawImage(drawTarget, 0, 0, w, h, this);
         }
+        if (darkOverlayAlpha > 0f) {
+            g2.setComposite(AlphaComposite.SrcOver.derive(darkOverlayAlpha));
+            g2.setColor(Color.BLACK);
+            g2.fillRect(0, 0, w, h);
+        }
         g2.dispose();
     }
 }
 
-class OverlayPane extends JComponent {
-    private final Image overlayImage;
-    private float overlayAlpha = 0f;
+class ImageLayerPanel extends JComponent {
+    private final Image layerImage;
+    private float layerAlpha = 1f;
 
-    public OverlayPane(Image overlayImage) {
-        this.overlayImage = overlayImage;
+    public ImageLayerPanel(Image layerImage) {
+        this.layerImage = layerImage;
         setOpaque(false);
     }
 
-    public void setOverlayAlpha(float alpha) {
-        this.overlayAlpha = Math.max(0f, Math.min(1f, alpha));
+    public void setLayerAlpha(float alpha) {
+        this.layerAlpha = Math.max(0f, Math.min(1f, alpha));
         repaint();
     }
 
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
-        if (overlayAlpha <= 0f) return;
+        if (layerAlpha <= 0f || layerImage == null) return;
         Graphics2D g2 = (Graphics2D) g.create();
-        g2.setComposite(AlphaComposite.SrcOver.derive(overlayAlpha));
+        g2.setComposite(AlphaComposite.SrcOver.derive(layerAlpha));
         int w = getWidth();
         int h = getHeight();
-        if (overlayImage != null) {
-            g2.drawImage(overlayImage, 0, 0, w, h, this);
-        } else {
-            g2.setColor(Color.BLACK);
-            g2.fillRect(0, 0, w, h);
-        }
+        g2.drawImage(layerImage, 0, 0, w, h, this);
         g2.dispose();
     }
 }
