@@ -1,7 +1,6 @@
 // ...existing code...
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -32,6 +31,8 @@ public class GameSelectorGUI{
     JLabel ExplainText;
     JLabel TutorialText;
     JLabel GameNameText;
+    BaseFrame mainFrame;
+    GameDetailDialog detailDialog;
 
     // 変更: 背景用ラベル -> 背景を描画するパネルに置き換え
     BackgroundPanel backgroundPanel;
@@ -71,6 +72,7 @@ public class GameSelectorGUI{
 
         //ウィンドウの作成
         var f = new BaseFrame("GameSelectorGUI",this);
+        mainFrame = f;
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setSize(width, height);
         f.setLayout(new GridLayout(1,2));
@@ -406,62 +408,40 @@ public class GameSelectorGUI{
         }
     }
 
-    public static void main(String[] args) {
-        new GameSelectorGUI();
-    }
-}
-
-class BaseFrame extends JFrame implements  KeyListener{
-    GameSelectorGUI selecterGUI;
-    Container c;
-
-    public BaseFrame(String name,GameSelectorGUI selecter){
-        super(name);
-        c = getContentPane();
-        this.selecterGUI=selecter;
-    }
-
-    public void contentAdd(JLabel j){
-        c.add(j);
-    }
-    public void contentPack(){
-        pack();
-    }
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-        
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        switch ( e.getKeyCode() ) {
-        case KeyEvent.VK_UP:
-            if(!selecterGUI.Gaming)selecterGUI.PushUpAction();
-            break;
-        case KeyEvent.VK_DOWN:
-            if(!selecterGUI.Gaming)selecterGUI.PushDownAction();
-            break;
-        case KeyEvent.VK_W:
-            if(!selecterGUI.Gaming)selecterGUI.PushUpAction();
-            break;
-        case KeyEvent.VK_S:
-            if(!selecterGUI.Gaming)selecterGUI.PushDownAction();
-            break;
-
-        case KeyEvent.VK_SPACE:
-            if(!selecterGUI.Gaming)selecterGUI.StartGame();
-            break;
-
-        case KeyEvent.VK_ESCAPE:
-            System.exit(0);
-            break;
+    public void OpenGameDetailWindow(){
+        if(Gaming) return;
+        if(selectNumber < 0 || selectNumber >= Games.size()) return;
+        if(detailDialog != null && detailDialog.isDisplayable()) return;
+        detailDialog = new GameDetailDialog(mainFrame, Games.get(selectNumber), this);
+        detailDialog.setVisible(true);
+        if(mainFrame != null){
+            mainFrame.requestFocusInWindow();
         }
     }
 
-    @Override
-    public void keyReleased(KeyEvent e) {
-        
+    public void CloseGameDetailWindow(){
+        if(detailDialog != null){
+            detailDialog.dispose();
+            detailDialog = null;
+        }
+        if(mainFrame != null){
+            mainFrame.requestFocusInWindow();
+        }
+    }
+
+    public void ConfirmGameFromDetailWindow(){
+        if(detailDialog != null){
+            detailDialog.dispose();
+            detailDialog = null;
+        }
+        StartGame();
+        if(mainFrame != null){
+            mainFrame.requestFocusInWindow();
+        }
+    }
+
+    public static void main(String[] args) {
+        new GameSelectorGUI();
     }
 }
 
@@ -517,4 +497,3 @@ class BackgroundPanel extends JPanel {
         g2.dispose();
     }
 }
-
