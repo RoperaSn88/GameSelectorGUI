@@ -1,7 +1,9 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
-import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
@@ -27,7 +29,7 @@ class GameDetailDialog extends JDialog {
         this.selectorGUI = selectorGUI;
 
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setLayout(new GridLayout(3, 1));
+        setLayout(new GridBagLayout());
         setSize(960, 720);
         setLocationRelativeTo(owner);
 
@@ -43,25 +45,57 @@ class GameDetailDialog extends JDialog {
         infoPanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
         JLabel nameLabel = new JLabel(game.name != null ? game.name : "");
         nameLabel.setFont(new Font("BIZ UDPゴシック", Font.BOLD, 42));
+        nameLabel.setHorizontalAlignment(JLabel.CENTER);
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         JLabel explainLabel = new JLabel(game.Explain != null ? game.Explain : "");
         explainLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 28));
+        explainLabel.setHorizontalAlignment(JLabel.CENTER);
+        explainLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         JLabel tutorialLabel = new JLabel(game.Tutorial != null ? game.Tutorial : "");
         tutorialLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
+        tutorialLabel.setHorizontalAlignment(JLabel.CENTER);
+        tutorialLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        infoPanel.add(Box.createVerticalGlue());
         infoPanel.add(nameLabel);
         infoPanel.add(Box.createVerticalStrut(16));
         infoPanel.add(explainLabel);
         infoPanel.add(Box.createVerticalStrut(16));
         infoPanel.add(tutorialLabel);
+        infoPanel.add(Box.createVerticalGlue());
 
         JPanel guidePanel = new JPanel(new BorderLayout());
         guidePanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
-        JLabel guideLabel = new JLabel("<html>スペースキー・エンターキーでゲームを開始します。<br/>Escキーでウィンドウを閉じます</html>");
+        JLabel guideLabel = new JLabel("<html><div style='text-align:center;'>スペースキーを押してゲームを開始します。<br/>Escキーでウィンドウを閉じます</div></html>");
         guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
-        guidePanel.add(guideLabel, BorderLayout.NORTH);
+        guideLabel.setHorizontalAlignment(JLabel.CENTER);
+        guidePanel.add(guideLabel, BorderLayout.CENTER);
 
-        add(imagePanel);
-        add(infoPanel);
-        add(guidePanel);
+        JPanel lowerPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints lowerGbc = new GridBagConstraints();
+        lowerGbc.gridx = 0;
+        lowerGbc.fill = GridBagConstraints.BOTH;
+        lowerGbc.weightx = 1.0;
+
+        lowerGbc.gridy = 0;
+        lowerGbc.weighty = 2.0;
+        lowerPanel.add(infoPanel, lowerGbc);
+
+        lowerGbc.gridy = 1;
+        lowerGbc.weighty = 1.0;
+        lowerPanel.add(guidePanel, lowerGbc);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0;
+
+        gbc.gridy = 0;
+        gbc.weighty = 2.0;
+        add(imagePanel, gbc);
+
+        gbc.gridy = 1;
+        gbc.weighty = 1.0;
+        add(lowerPanel, gbc);
 
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getRootPane().getActionMap();
