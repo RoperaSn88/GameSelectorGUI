@@ -24,6 +24,7 @@ import java.awt.AlphaComposite;
 import javax.swing.*;
 import java.io.*;
 import java.nio.file.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GameSelectorGUI{
     ArrayList<Game> Games=new ArrayList<>();
@@ -57,7 +58,7 @@ public class GameSelectorGUI{
     final int FADE_DURATION = 480; // ms
     private static final String OVERLAY_IMAGE_PATH = "backGroundCover.png";
     Timer fadeTimer;
-    private volatile boolean exiting = false;
+    private final AtomicBoolean exiting = new AtomicBoolean(false);
 
     public GameSelectorGUI(){
          //ゲームのリストを作成する（CSVから読み込む。見つからない場合はデフォルトを追加）
@@ -199,6 +200,11 @@ public class GameSelectorGUI{
         });
         f.addWindowListener(new WindowAdapter() {
             @Override
+            public void windowOpened(WindowEvent e) {
+                animateDarkOverlay(1f, 0f, FADE_DURATION, null);
+            }
+
+            @Override
             public void windowClosing(WindowEvent e) {
                 RequestApplicationExit();
             }
@@ -206,7 +212,6 @@ public class GameSelectorGUI{
 
         f.setVisible(true);
         f.addKeyListener(f);
-        SwingUtilities.invokeLater(() -> animateDarkOverlay(1f, 0f, FADE_DURATION, null));
 
         // 起動時に最初の選択が拡大するアニメーションを開始（OutCubic）
         startExpandAnimation(selectNumber);
@@ -379,8 +384,7 @@ public class GameSelectorGUI{
     }
 
     public void RequestApplicationExit(){
-        if(Gaming || exiting) return;
-        exiting = true;
+        if(Gaming || !exiting.compareAndSet(false, true)) return;
         animateDarkOverlay(0f, 1f, FADE_DURATION, () -> System.exit(0));
     }
 
