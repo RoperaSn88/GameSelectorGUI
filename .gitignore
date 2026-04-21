@@ -25,3 +25,7 @@ replay_pid*
 
 #exeファイルをけす
 GameDatas
+
+# ou消す
+out/*
+.idea/*
