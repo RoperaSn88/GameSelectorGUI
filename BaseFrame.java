@@ -5,13 +5,13 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 class BaseFrame extends JFrame implements KeyListener{
-    GameSelectorGUI selecterGUI;
+    GameSelectorGUI selectorGUI;
     Container c;
 
-    public BaseFrame(String name,GameSelectorGUI selecter){
+    public BaseFrame(String name,GameSelectorGUI selector){
         super(name);
         c = getContentPane();
-        this.selecterGUI=selecter;
+        this.selectorGUI = selector;
     }
 
     public void contentAdd(JLabel j){
@@ -28,24 +28,24 @@ class BaseFrame extends JFrame implements KeyListener{
 
     @Override
     public void keyPressed(KeyEvent e) {
-        switch ( e.getKeyCode() ) {
+        switch (e.getKeyCode()) {
             case KeyEvent.VK_UP:
-                if(!selecterGUI.Gaming)selecterGUI.PushUpAction();
+                if (!selectorGUI.Gaming)selectorGUI.PushUpAction();
                 break;
             case KeyEvent.VK_DOWN:
-                if(!selecterGUI.Gaming)selecterGUI.PushDownAction();
+                if (!selectorGUI.Gaming)selectorGUI.PushDownAction();
                 break;
             case KeyEvent.VK_W:
-                if(!selecterGUI.Gaming)selecterGUI.PushUpAction();
+                if (!selectorGUI.Gaming)selectorGUI.PushUpAction();
                 break;
             case KeyEvent.VK_S:
-                if(!selecterGUI.Gaming)selecterGUI.PushDownAction();
+                if (!selectorGUI.Gaming)selectorGUI.PushDownAction();
                 break;
             case KeyEvent.VK_SPACE:
-                if(!selecterGUI.Gaming)selecterGUI.OpenGameDetailWindow();
+                if (!selectorGUI.Gaming)selectorGUI.OpenGameDetailWindow();
                 break;
             case KeyEvent.VK_ENTER:
-                if(!selecterGUI.Gaming)selecterGUI.OpenGameDetailWindow();
+                if (!selectorGUI.Gaming)selectorGUI.OpenGameDetailWindow();
                 break;
             case KeyEvent.VK_ESCAPE:
                 System.exit(0);
