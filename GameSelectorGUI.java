@@ -18,6 +18,7 @@ import java.awt.MediaTracker;
 import java.awt.Image;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.AlphaComposite;
 import javax.swing.*;
 import java.io.*;
 import java.nio.file.*;
@@ -26,7 +27,7 @@ public class GameSelectorGUI{
     ArrayList<Game> Games=new ArrayList<>();
     ArrayList<JLabel> GameTexts=new ArrayList<>();
     int selectNumber=0;
-    public Boolean Gaming=false;
+    public volatile boolean Gaming=false;
     JLabel GameNameText;
     BaseFrame mainFrame;
     GameDetailDialog detailDialog;
@@ -50,6 +51,8 @@ public class GameSelectorGUI{
     int animStartSize = 0;
     int animEndSize = 0;
     final int ANIM_DURATION = 360; // ms
+    final int FADE_DURATION = 480; // ms
+    Timer fadeTimer;
 
     public GameSelectorGUI(){
          //ゲームのリストを作成する（CSVから読み込む。見つからない場合はデフォルトを追加）
@@ -341,20 +344,53 @@ public class GameSelectorGUI{
     }
 
     public void StartGame(){
-        if(!Gaming){
-            String GetPath=Games.get(selectNumber).path;
-            try {
-                ProcessBuilder builder = new ProcessBuilder(GetPath);
-                Process process=builder.start();
-                Gaming=true;
-                int exitCode=process.waitFor();
-                Gaming=false;
+        if(Gaming) return;
+        String GetPath=Games.get(selectNumber).path;
+        Gaming=true;
+        animateDarkOverlay(0f, 1f, FADE_DURATION, () -> {
+            Thread gameThread = new Thread(() -> {
+                try {
+                    ProcessBuilder builder = new ProcessBuilder(GetPath);
+                    Process process=builder.start();
+                    process.waitFor();
+                } catch (Exception e) {
+                    System.out.println("Failed to launch game at path: " + GetPath + " (" + e.getMessage() + ")");
+                } finally {
+                    SwingUtilities.invokeLater(() -> animateDarkOverlay(1f, 0f, FADE_DURATION, () -> Gaming=false));
+                }
+            }, "game-runner-thread");
+            gameThread.start();
+        });
+    }
 
-            } catch (Exception e) {
-                System.out.println("Cant Open exe file");
-                Gaming=false;
-            }
+    private void animateDarkOverlay(float startAlpha, float endAlpha, int durationMs, Runnable onComplete){
+        if(backgroundPanel == null){
+            if(onComplete != null) onComplete.run();
+            return;
         }
+        backgroundPanel.setDarkOverlayAlpha(startAlpha);
+        if(durationMs <= 0){
+            backgroundPanel.setDarkOverlayAlpha(endAlpha);
+            if(onComplete != null) onComplete.run();
+            return;
+        }
+        if(fadeTimer != null && fadeTimer.isRunning()){
+            fadeTimer.stop();
+        }
+        final long startedAt = System.currentTimeMillis();
+        fadeTimer = new Timer(TIMER_DELAY, null);
+        fadeTimer.addActionListener(e -> {
+            long elapsed = System.currentTimeMillis() - startedAt;
+            float t = Math.min(1f, Math.max(0f, elapsed / (float)durationMs));
+            float alpha = startAlpha + (endAlpha - startAlpha) * t;
+            backgroundPanel.setDarkOverlayAlpha(alpha);
+            if(t >= 1f){
+                fadeTimer.stop();
+                backgroundPanel.setDarkOverlayAlpha(endAlpha);
+                if(onComplete != null) onComplete.run();
+            }
+        });
+        fadeTimer.start();
     }
 
     public void OpenGameDetailWindow(){
@@ -399,6 +435,7 @@ public class GameSelectorGUI{
 class BackgroundPanel extends JPanel {
     private Image backgroundImage;
     private Image backgroundVideoImage;
+    private float darkOverlayAlpha = 0f;
 
     public BackgroundPanel(Image img) {
         this.backgroundImage = img;
@@ -418,6 +455,11 @@ class BackgroundPanel extends JPanel {
         repaint();
     }
 
+    public void setDarkOverlayAlpha(float alpha) {
+        this.darkOverlayAlpha = Math.max(0f, Math.min(1f, alpha));
+        repaint();
+    }
+
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
@@ -430,6 +472,11 @@ class BackgroundPanel extends JPanel {
         Image drawTarget = backgroundVideoImage != null ? backgroundVideoImage : backgroundImage;
         if (drawTarget != null) {
             g2.drawImage(drawTarget, 0, 0, w, h, this);
+        }
+        if (darkOverlayAlpha > 0f) {
+            g2.setComposite(AlphaComposite.SrcOver.derive(darkOverlayAlpha));
+            g2.setColor(Color.BLACK);
+            g2.fillRect(0, 0, w, h);
         }
 
         g2.dispose();
