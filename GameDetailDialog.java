@@ -45,15 +45,12 @@ class GameDetailDialog extends JDialog {
         infoPanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
         JLabel nameLabel = new JLabel(game.name != null ? game.name : "");
         nameLabel.setFont(new Font("BIZ UDPゴシック", Font.BOLD, 42));
-        nameLabel.setHorizontalAlignment(JLabel.CENTER);
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         JLabel explainLabel = new JLabel(game.Explain != null ? game.Explain : "");
         explainLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 28));
-        explainLabel.setHorizontalAlignment(JLabel.CENTER);
         explainLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         JLabel tutorialLabel = new JLabel(game.Tutorial != null ? game.Tutorial : "");
         tutorialLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
-        tutorialLabel.setHorizontalAlignment(JLabel.CENTER);
         tutorialLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         infoPanel.add(Box.createVerticalGlue());
         infoPanel.add(nameLabel);
@@ -100,7 +97,6 @@ class GameDetailDialog extends JDialog {
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getRootPane().getActionMap();
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "confirm");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "confirm");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "close");
         actionMap.put("confirm", new AbstractAction() {
             @Override
