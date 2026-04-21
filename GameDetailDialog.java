@@ -63,7 +63,7 @@ class GameDetailDialog extends JDialog {
         JPanel guidePanel = new JPanel(new BorderLayout());
         guidePanel.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
         JLabel guideLabel = new JLabel("Space/Enterで開始、Escでウィンドウを閉じます。");
-        guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 20));
+        guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 16));
         guideLabel.setHorizontalAlignment(JLabel.CENTER);
         guidePanel.add(guideLabel, BorderLayout.CENTER);
 
@@ -74,7 +74,7 @@ class GameDetailDialog extends JDialog {
         lowerGbc.weightx = 1.0;
 
         lowerGbc.gridy = 0;
-        lowerGbc.weighty = 2.0;
+        lowerGbc.weighty = 1.0;
         lowerPanel.add(infoPanel, lowerGbc);
 
         lowerGbc.gridy = 1;
@@ -87,7 +87,7 @@ class GameDetailDialog extends JDialog {
         gbc.weightx = 1.0;
 
         gbc.gridy = 0;
-        gbc.weighty = 2.0;
+        gbc.weighty = 20.0;
         add(imagePanel, gbc);
 
         gbc.gridy = 1;
