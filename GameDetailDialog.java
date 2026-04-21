@@ -62,7 +62,7 @@ class GameDetailDialog extends JDialog {
 
         JPanel guidePanel = new JPanel(new BorderLayout());
         guidePanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
-        JLabel guideLabel = new JLabel("<html>スペースキーを押してゲームを開始します。<br/>Escキーでウィンドウを閉じます</html>");
+        JLabel guideLabel = new JLabel("<html>スペースキーを押してゲームを開始します（Enterキーでも開始できます）。<br/>Escキーでウィンドウを閉じます</html>");
         guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
         guideLabel.setHorizontalAlignment(JLabel.CENTER);
         guidePanel.add(guideLabel, BorderLayout.CENTER);
@@ -97,6 +97,7 @@ class GameDetailDialog extends JDialog {
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getRootPane().getActionMap();
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "confirm");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "confirm");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "close");
         actionMap.put("confirm", new AbstractAction() {
             @Override
