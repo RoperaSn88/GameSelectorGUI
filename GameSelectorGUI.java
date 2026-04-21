@@ -1,7 +1,6 @@
 // ...existing code...
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -11,8 +10,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 import java.awt.event.ComponentAdapter;
@@ -445,137 +442,6 @@ public class GameSelectorGUI{
 
     public static void main(String[] args) {
         new GameSelectorGUI();
-    }
-}
-
-class BaseFrame extends JFrame implements  KeyListener{
-    GameSelectorGUI selecterGUI;
-    Container c;
-
-    public BaseFrame(String name,GameSelectorGUI selecter){
-        super(name);
-        c = getContentPane();
-        this.selecterGUI=selecter;
-    }
-
-    public void contentAdd(JLabel j){
-        c.add(j);
-    }
-    public void contentPack(){
-        pack();
-    }
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-        
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        switch ( e.getKeyCode() ) {
-        case KeyEvent.VK_UP:
-            if(!selecterGUI.Gaming)selecterGUI.PushUpAction();
-            break;
-        case KeyEvent.VK_DOWN:
-            if(!selecterGUI.Gaming)selecterGUI.PushDownAction();
-            break;
-        case KeyEvent.VK_W:
-            if(!selecterGUI.Gaming)selecterGUI.PushUpAction();
-            break;
-        case KeyEvent.VK_S:
-            if(!selecterGUI.Gaming)selecterGUI.PushDownAction();
-            break;
-
-        case KeyEvent.VK_SPACE:
-            if(!selecterGUI.Gaming)selecterGUI.OpenGameDetailWindow();
-            break;
-
-        case KeyEvent.VK_ENTER:
-            if(!selecterGUI.Gaming)selecterGUI.OpenGameDetailWindow();
-            break;
-
-        case KeyEvent.VK_ESCAPE:
-            System.exit(0);
-            break;
-        }
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        
-    }
-}
-
-class GameDetailDialog extends JDialog {
-    private final GameSelectorGUI selectorGUI;
-
-    public GameDetailDialog(JFrame owner, Game game, GameSelectorGUI selectorGUI){
-        super(owner, game.name, true);
-        this.selectorGUI = selectorGUI;
-
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setLayout(new GridLayout(3,1));
-        setSize(960, 720);
-        setLocationRelativeTo(owner);
-
-        JPanel imagePanel = new JPanel(new BorderLayout());
-        imagePanel.setBackground(Color.BLACK);
-        JLabel imageLabel = new JLabel(game.image);
-        imageLabel.setHorizontalAlignment(JLabel.CENTER);
-        imageLabel.setVerticalAlignment(JLabel.CENTER);
-        imagePanel.add(imageLabel, BorderLayout.CENTER);
-
-        JPanel infoPanel = new JPanel();
-        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-        infoPanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
-        JLabel nameLabel = new JLabel(game.name != null ? game.name : "");
-        nameLabel.setFont(new Font("BIZ UDPゴシック", Font.BOLD, 42));
-        JLabel explainLabel = new JLabel(game.Explain != null ? game.Explain : "");
-        explainLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 28));
-        JLabel tutorialLabel = new JLabel(game.Tutorial != null ? game.Tutorial : "");
-        tutorialLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
-        infoPanel.add(nameLabel);
-        infoPanel.add(Box.createVerticalStrut(16));
-        infoPanel.add(explainLabel);
-        infoPanel.add(Box.createVerticalStrut(16));
-        infoPanel.add(tutorialLabel);
-
-        JPanel guidePanel = new JPanel(new BorderLayout());
-        guidePanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
-        JLabel guideLabel = new JLabel("<html>スペースキー・エンターキーでゲームを開始します。<br/>Escキーでウィンドウを閉じます</html>");
-        guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
-        guidePanel.add(guideLabel, BorderLayout.NORTH);
-
-        add(imagePanel);
-        add(infoPanel);
-        add(guidePanel);
-
-        InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        ActionMap actionMap = getRootPane().getActionMap();
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "confirm");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "confirm");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "close");
-        actionMap.put("confirm", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                selectorGUI.ConfirmGameFromDetailWindow();
-            }
-        });
-        actionMap.put("close", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                selectorGUI.CloseGameDetailWindow();
-            }
-        });
-
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosed(WindowEvent e) {
-                if(selectorGUI.mainFrame != null){
-                    selectorGUI.mainFrame.requestFocusInWindow();
-                }
-            }
-        });
     }
 }
 
