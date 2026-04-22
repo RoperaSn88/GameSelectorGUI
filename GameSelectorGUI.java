@@ -1,11 +1,11 @@
 // ...existing code...
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.Toolkit;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -71,18 +71,12 @@ public class GameSelectorGUI{
             return;
         }
 
-        //maxmizeにしたい
-        Dimension dim=Toolkit.getDefaultToolkit().getScreenSize();
-        int width = dim.width;
-        int height = dim.height;
-        
-
         //ウィンドウの作成
         var f = new BaseFrame("GameSelectorGUI",this);
         mainFrame = f;
         f.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        f.setSize(width, height);
         f.setLayout(new GridLayout(1,2));
+        configureFullScreen(f);
 
         // 背景用パネルを作成してフレームのコンテントに設定（背景は自動でリサイズして描画される）
         Image initialBg = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
@@ -424,6 +418,16 @@ public class GameSelectorGUI{
         for (JComponent layer : layers) {
             layer.setBounds(0, 0, bounds.width, bounds.height);
         }
+    }
+
+    private void configureFullScreen(JFrame frame) {
+        GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        if (device.isFullScreenSupported()) {
+            frame.setUndecorated(true);
+            device.setFullScreenWindow(frame);
+            return;
+        }
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
 
     private void animateDarkOverlay(float startAlpha, float endAlpha, int durationMs, Runnable onComplete){
