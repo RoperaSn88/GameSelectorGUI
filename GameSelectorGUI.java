@@ -423,7 +423,6 @@ public class GameSelectorGUI{
     private void configureFullScreen(JFrame frame) {
         GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         if (device.isFullScreenSupported()) {
-            frame.setUndecorated(true);
             device.setFullScreenWindow(frame);
             return;
         }
