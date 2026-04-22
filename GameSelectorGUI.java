@@ -194,6 +194,12 @@ public class GameSelectorGUI{
         var textLayer = new JPanel(new BorderLayout());
         textLayer.setOpaque(false);
         textLayer.add(textPanel, BorderLayout.WEST);
+        JLabel guideLabel = new JLabel("上下キー/WSキーで選択　スペースで決定");
+        guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
+        guideLabel.setForeground(Color.WHITE);
+        guideLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        guideLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 24, 0));
+        textLayer.add(guideLabel, BorderLayout.SOUTH);
 
         var backGroundCoverLayer = new ImageLayerPanel(loadImage(BACKGROUND_COVER_IMAGE_PATH));
         backGroundPanelLayer = new ImageLayerPanel(loadImage(BACKGROUND_PANEL_IMAGE_PATH));
