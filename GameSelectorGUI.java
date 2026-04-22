@@ -61,7 +61,7 @@ public class GameSelectorGUI{
     private static final String BACKGROUND_PANEL_IMAGE_PATH = "backGroundPanel.png";
     Timer fadeTimer;
     private final AtomicBoolean exiting = new AtomicBoolean(false);
-    private GraphicsDevice fullScreenDevice;
+    private volatile GraphicsDevice fullScreenDevice;
 
     public GameSelectorGUI(){
          //ゲームのリストを作成する（CSVから読み込む。見つからない場合はデフォルトを追加）
