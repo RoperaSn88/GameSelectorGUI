@@ -1,11 +1,11 @@
 // ...existing code...
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.Toolkit;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -14,14 +14,18 @@ import java.util.ArrayList;
 import java.util.stream.Stream;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.MediaTracker;
 import java.awt.Image;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.AlphaComposite;
+import java.awt.Rectangle;
 import javax.swing.*;
 import java.io.*;
 import java.nio.file.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GameSelectorGUI{
     ArrayList<Game> Games=new ArrayList<>();
@@ -34,6 +38,7 @@ public class GameSelectorGUI{
 
     // 変更: 背景用ラベル -> 背景を描画するパネルに置き換え
     BackgroundPanel backgroundPanel;
+    ImageLayerPanel backGroundPanelLayer;
     
     // アニメーション用
     int[] currentSizes;
@@ -52,7 +57,11 @@ public class GameSelectorGUI{
     int animEndSize = 0;
     final int ANIM_DURATION = 360; // ms
     final int FADE_DURATION = 480; // ms
+    private static final String BACKGROUND_COVER_IMAGE_PATH = "backGroundCover.png";
+    private static final String BACKGROUND_PANEL_IMAGE_PATH = "backGroundPanel.png";
     Timer fadeTimer;
+    private final AtomicBoolean exiting = new AtomicBoolean(false);
+    private volatile GraphicsDevice fullScreenDevice;
 
     public GameSelectorGUI(){
          //ゲームのリストを作成する（CSVから読み込む。見つからない場合はデフォルトを追加）
@@ -63,27 +72,22 @@ public class GameSelectorGUI{
             return;
         }
 
-        //maxmizeにしたい
-        Dimension dim=Toolkit.getDefaultToolkit().getScreenSize();
-        int width = dim.width;
-        int height = dim.height;
-        
-
         //ウィンドウの作成
         var f = new BaseFrame("GameSelectorGUI",this);
         mainFrame = f;
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setSize(width, height);
+        f.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         f.setLayout(new GridLayout(1,2));
+        configureFullScreen(f);
 
         // 背景用パネルを作成してフレームのコンテントに設定（背景は自動でリサイズして描画される）
         Image initialBg = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
         Image initialVideo = Games.get(selectNumber).backgroundVideo != null ? Games.get(selectNumber).backgroundVideo.getImage() : null;
         backgroundPanel = new BackgroundPanel(initialBg);
         backgroundPanel.setBackgroundMedia(initialBg, initialVideo);
-        // 背景の上にゲーム名のみを表示
         backgroundPanel.setLayout(new BorderLayout());
-        f.setContentPane(backgroundPanel);
+        var layeredRoot = new JLayeredPane();
+        layeredRoot.setLayout(null);
+        f.setContentPane(layeredRoot);
 
         // 文字を配置する際、JFrame.addでは各方角に1つしか配置できないらしいのでPanelを使用する。
         JPanel textPanel=new JPanel();
@@ -178,8 +182,30 @@ public class GameSelectorGUI{
         namePanel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
         namePanel.add(GameNameText, BorderLayout.SOUTH);
 
-        // 背景パネル上に他コンポーネントを追加（透過設定を維持）
-        backgroundPanel.add(namePanel, BorderLayout.EAST);
+        var gameNameLayer = new JPanel(new BorderLayout());
+        gameNameLayer.setOpaque(false);
+        gameNameLayer.add(namePanel, BorderLayout.EAST);
+
+        var textLayer = new JPanel(new BorderLayout());
+        textLayer.setOpaque(false);
+        textLayer.add(textPanel, BorderLayout.WEST);
+        JLabel guideLabel = new JLabel("上下キー/WSキーで選択　スペースで決定");
+        guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
+        guideLabel.setForeground(Color.WHITE);
+        guideLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        guideLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 24, 0));
+        textLayer.add(guideLabel, BorderLayout.SOUTH);
+
+        var backGroundCoverLayer = new ImageLayerPanel(loadImage(BACKGROUND_COVER_IMAGE_PATH));
+        backGroundPanelLayer = new ImageLayerPanel(loadImage(BACKGROUND_PANEL_IMAGE_PATH));
+        backGroundPanelLayer.setLayerAlpha(1f);
+
+        layeredRoot.add(backgroundPanel, Integer.valueOf(0));
+        layeredRoot.add(backGroundCoverLayer, Integer.valueOf(100));
+        layeredRoot.add(gameNameLayer, Integer.valueOf(200));
+        layeredRoot.add(textLayer, Integer.valueOf(300));
+        layeredRoot.add(backGroundPanelLayer, Integer.valueOf(400));
+        updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
 
         // リサイズ時は背景を再描画
         f.addComponentListener(new ComponentAdapter() {
@@ -187,6 +213,18 @@ public class GameSelectorGUI{
             public void componentResized(ComponentEvent e) {
                 backgroundPanel.revalidate();
                 backgroundPanel.repaint();
+                updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
+            }
+        });
+        f.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+                animateDarkOverlay(1f, 0f, FADE_DURATION, null);
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                RequestApplicationExit();
             }
         });
 
@@ -363,14 +401,51 @@ public class GameSelectorGUI{
         });
     }
 
+    public void RequestApplicationExit(){
+        if(Gaming || !exiting.compareAndSet(false, true)) return;
+        animateDarkOverlay(0f, 1f, FADE_DURATION, () -> {
+            if (fullScreenDevice != null) {
+                fullScreenDevice.setFullScreenWindow(null);
+            }
+            System.exit(0);
+        });
+    }
+
+    private Image loadImage(String path) {
+        Path overlayPath = Paths.get(path);
+        if (!Files.exists(overlayPath)) {
+            return null;
+        }
+        return new ImageIcon(overlayPath.toString()).getImage();
+    }
+
+    private void updateLayerBounds(JLayeredPane root, JComponent... layers) {
+        Rectangle bounds = root.getBounds();
+        for (JComponent layer : layers) {
+            layer.setBounds(0, 0, bounds.width, bounds.height);
+        }
+    }
+
+    private void configureFullScreen(JFrame frame) {
+        GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        if (device.isFullScreenSupported()) {
+            fullScreenDevice = device;
+            frame.setUndecorated(true);
+            fullScreenDevice.setFullScreenWindow(frame);
+            return;
+        }
+        fullScreenDevice = null;
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+    }
+
     private void animateDarkOverlay(float startAlpha, float endAlpha, int durationMs, Runnable onComplete){
-        if(backgroundPanel == null){
+        if(backGroundPanelLayer == null){
             if(onComplete != null) onComplete.run();
             return;
         }
-        backgroundPanel.setDarkOverlayAlpha(startAlpha);
+        backGroundPanelLayer.setLayerAlpha(startAlpha);
         if(durationMs <= 0){
-            backgroundPanel.setDarkOverlayAlpha(endAlpha);
+            backGroundPanelLayer.setLayerAlpha(endAlpha);
             if(onComplete != null) onComplete.run();
             return;
         }
@@ -383,10 +458,10 @@ public class GameSelectorGUI{
             long elapsed = System.currentTimeMillis() - startedAt;
             float t = Math.min(1f, Math.max(0f, elapsed / (float)durationMs));
             float alpha = startAlpha + (endAlpha - startAlpha) * t;
-            backgroundPanel.setDarkOverlayAlpha(alpha);
+            backGroundPanelLayer.setLayerAlpha(alpha);
             if(t >= 1f){
                 fadeTimer.stop();
-                backgroundPanel.setDarkOverlayAlpha(endAlpha);
+                backGroundPanelLayer.setLayerAlpha(endAlpha);
                 if(onComplete != null) onComplete.run();
             }
         });
@@ -478,7 +553,33 @@ class BackgroundPanel extends JPanel {
             g2.setColor(Color.BLACK);
             g2.fillRect(0, 0, w, h);
         }
+        g2.dispose();
+    }
+}
 
+class ImageLayerPanel extends JComponent {
+    private final Image layerImage;
+    private float layerAlpha = 1f;
+
+    public ImageLayerPanel(Image layerImage) {
+        this.layerImage = layerImage;
+        setOpaque(false);
+    }
+
+    public void setLayerAlpha(float alpha) {
+        this.layerAlpha = Math.max(0f, Math.min(1f, alpha));
+        repaint();
+    }
+
+    @Override
+    protected void paintComponent(java.awt.Graphics g) {
+        super.paintComponent(g);
+        if (layerAlpha <= 0f || layerImage == null) return;
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setComposite(AlphaComposite.SrcOver.derive(layerAlpha));
+        int w = getWidth();
+        int h = getHeight();
+        g2.drawImage(layerImage, 0, 0, w, h, this);
         g2.dispose();
     }
 }
