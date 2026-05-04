@@ -4,8 +4,6 @@ import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -61,7 +59,6 @@ public class GameSelectorGUI{
     private static final String BACKGROUND_PANEL_IMAGE_PATH = "backGroundPanel.png";
     Timer fadeTimer;
     private final AtomicBoolean exiting = new AtomicBoolean(false);
-    private volatile GraphicsDevice fullScreenDevice;
 
     public GameSelectorGUI(){
          //ゲームのリストを作成する（CSVから読み込む。見つからない場合はデフォルトを追加）
@@ -216,9 +213,18 @@ public class GameSelectorGUI{
                 updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
             }
         });
+        // layeredRoot 自体のリサイズ（起動時の初回レイアウト確定を含む）でもバウンドを更新する
+        layeredRoot.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
+            }
+        });
         f.addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
+                // ウィンドウが表示された後に確実にバウンドを更新してからアニメーションを開始する
+                updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
                 animateDarkOverlay(1f, 0f, FADE_DURATION, null);
             }
 
@@ -404,9 +410,6 @@ public class GameSelectorGUI{
     public void RequestApplicationExit(){
         if(Gaming || !exiting.compareAndSet(false, true)) return;
         animateDarkOverlay(0f, 1f, FADE_DURATION, () -> {
-            if (fullScreenDevice != null) {
-                fullScreenDevice.setFullScreenWindow(null);
-            }
             System.exit(0);
         });
     }
@@ -427,14 +430,6 @@ public class GameSelectorGUI{
     }
 
     private void configureFullScreen(JFrame frame) {
-        GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        if (device.isFullScreenSupported()) {
-            fullScreenDevice = device;
-            frame.setUndecorated(true);
-            fullScreenDevice.setFullScreenWindow(frame);
-            return;
-        }
-        fullScreenDevice = null;
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
 
@@ -514,7 +509,8 @@ class BackgroundPanel extends JPanel {
 
     public BackgroundPanel(Image img) {
         this.backgroundImage = img;
-        setOpaque(false);
+        setOpaque(true);
+        setBackground(Color.BLACK);
     }
 
     // 単体で背景を設定（静止画）
