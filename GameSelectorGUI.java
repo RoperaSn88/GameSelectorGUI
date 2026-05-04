@@ -266,24 +266,20 @@ public class GameSelectorGUI{
             while ((line = r.readLine()) != null) {
                 // 空行はスキップ
                 if (line.trim().isEmpty()) continue;
-                // ヘッダー判定: 1 行目が "name" で始まる場合はヘッダーとしてスキップ
+                // 1行目はヘッダー行として常にスキップ
                 if (first) {
-                    String t = line.trim().toLowerCase();
-                    if (t.startsWith("name") || t.contains("path") && t.contains("image")) {
-                        first = false;
-                        continue;
-                    }
+                    first = false;
+                    continue;
                 }
-                first = false;
                 ArrayList<String> cols = parseCSVLine(line);
-                // 必要列: name,path,image,background,explain,tutorial,backgroundVideo （不足分は null で埋める）
+                // 列順: ゲーム名,exe,icon.png,bg.png,bg.mp4,説明,チュートリアル
                 String name = cols.size() > 0 ? cols.get(0) : "";
                 String path = cols.size() > 1 ? cols.get(1) : "null";
                 String image = cols.size() > 2 ? cols.get(2) : null;
                 String background = cols.size() > 3 ? cols.get(3) : null;
-                String explain = cols.size() > 4 ? cols.get(4) : null;
-                String tut = cols.size() > 5 ? cols.get(5) : null;
-                String backgroundVideo = cols.size() > 6 ? cols.get(6) : null;
+                String backgroundVideo = cols.size() > 4 ? cols.get(4) : null;
+                String explain = cols.size() > 5 ? cols.get(5) : null;
+                String tut = cols.size() > 6 ? cols.get(6) : null;
                 Games.add(new Game(name, path, image, background, explain, tut, backgroundVideo));
             }
             return true;
