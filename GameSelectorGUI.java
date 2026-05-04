@@ -78,9 +78,7 @@ public class GameSelectorGUI{
 
         // 背景用パネルを作成してフレームのコンテントに設定（背景は自動でリサイズして描画される）
         Image initialBg = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
-        Image initialVideo = Games.get(selectNumber).backgroundVideo != null ? Games.get(selectNumber).backgroundVideo.getImage() : null;
         backgroundPanel = new BackgroundPanel(initialBg);
-        backgroundPanel.setBackgroundMedia(initialBg, initialVideo);
         backgroundPanel.setLayout(new BorderLayout());
         var layeredRoot = new JLayeredPane();
         layeredRoot.setLayout(null);
@@ -259,25 +257,20 @@ public class GameSelectorGUI{
             while ((line = r.readLine()) != null) {
                 // 空行はスキップ
                 if (line.trim().isEmpty()) continue;
-                // ヘッダー判定: 1 行目が "name" で始まる場合はヘッダーとしてスキップ
+                // 1行目はヘッダー行として常にスキップ
                 if (first) {
-                    String t = line.trim().toLowerCase();
-                    if (t.startsWith("name") || t.contains("path") && t.contains("image")) {
-                        first = false;
-                        continue;
-                    }
+                    first = false;
+                    continue;
                 }
-                first = false;
                 ArrayList<String> cols = parseCSVLine(line);
-                // 必要列: name,path,image,background,explain,tutorial,backgroundVideo （不足分は null で埋める）
+                // 列順: ゲーム名,exe,icon.png,bg.png,説明,チュートリアル
                 String name = cols.size() > 0 ? cols.get(0) : "";
                 String path = cols.size() > 1 ? cols.get(1) : "null";
                 String image = cols.size() > 2 ? cols.get(2) : null;
                 String background = cols.size() > 3 ? cols.get(3) : null;
                 String explain = cols.size() > 4 ? cols.get(4) : null;
                 String tut = cols.size() > 5 ? cols.get(5) : null;
-                String backgroundVideo = cols.size() > 6 ? cols.get(6) : null;
-                Games.add(new Game(name, path, image, background, explain, tut, backgroundVideo));
+                Games.add(new Game(name, path, image, background, explain, tut));
             }
             return true;
         } catch (IOException ex) {
@@ -337,10 +330,9 @@ public class GameSelectorGUI{
 
         // 通常ウィンドウはゲーム名のみ更新
         GameNameText.setText(Games.get(selectNumber).name);
-        // 背景を選択中のゲームの backGround / 背景映像に更新
+        // 背景を選択中のゲームの backGround に更新
         Image background = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
-        Image backgroundVideo = Games.get(selectNumber).backgroundVideo != null ? Games.get(selectNumber).backgroundVideo.getImage() : null;
-        backgroundPanel.setBackgroundMedia(background, backgroundVideo);
+        backgroundPanel.setBackgroundImage(background);
 
         // 前回選択されていた項目は即座に小さくする（アニメーション不要）
         if (previous >= 0 && previous != selectNumber) {
@@ -501,28 +493,21 @@ public class GameSelectorGUI{
 }
 
 // 背景描画用パネル
-// static 背景画像、または GIF などの背景映像（ループ再生）を表示する
+// 静止画を背景として表示する
 class BackgroundPanel extends JPanel {
     private Image backgroundImage;
-    private Image backgroundVideoImage;
     private float darkOverlayAlpha = 0f;
 
     public BackgroundPanel(Image img) {
+        super(new BorderLayout());
         this.backgroundImage = img;
         setOpaque(true);
         setBackground(Color.BLACK);
     }
 
-    // 単体で背景を設定（静止画）
+    // 背景を設定（静止画）
     public void setBackgroundImage(Image img) {
         this.backgroundImage = img;
-        repaint();
-    }
-
-    // 背景と背景映像を同時に設定（映像があれば映像を優先表示）
-    public void setBackgroundMedia(Image background, Image backgroundVideo) {
-        this.backgroundImage = background;
-        this.backgroundVideoImage = backgroundVideo;
         repaint();
     }
 
@@ -540,9 +525,8 @@ class BackgroundPanel extends JPanel {
         int w = getWidth();
         int h = getHeight();
 
-        Image drawTarget = backgroundVideoImage != null ? backgroundVideoImage : backgroundImage;
-        if (drawTarget != null) {
-            g2.drawImage(drawTarget, 0, 0, w, h, this);
+        if (backgroundImage != null) {
+            g2.drawImage(backgroundImage, 0, 0, w, h, this);
         }
         if (darkOverlayAlpha > 0f) {
             g2.setComposite(AlphaComposite.SrcOver.derive(darkOverlayAlpha));
