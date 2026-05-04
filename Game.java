@@ -32,13 +32,16 @@ public class Game {
             backGround = new ImageIcon(); 
         }
         if (backgroundVideoPath != null && !backgroundVideoPath.isBlank()) {
-            backgroundVideo = new ImageIcon(backgroundVideoPath);
-            if (backgroundVideo.getImageLoadStatus() != MediaTracker.COMPLETE) {
-                System.err.println("背景映像の読み込みに失敗しました: " + backgroundVideoPath);
-                backgroundVideo = new ImageIcon();
+            String lowerPath = backgroundVideoPath.toLowerCase();
+            if (lowerPath.endsWith(".gif")) {
+                // アニメーション GIF のみ ImageIcon でロード
+                backgroundVideo = new ImageIcon(backgroundVideoPath);
+                if (backgroundVideo.getImageLoadStatus() != MediaTracker.COMPLETE) {
+                    System.err.println("背景映像の読み込みに失敗しました: " + backgroundVideoPath);
+                    backgroundVideo = new ImageIcon();
+                }
             }
-        } else {
-            backgroundVideo = new ImageIcon();
+            // MP4 などの動画形式は表示時に JavaFX MediaPlayer で再生するため、ここではロードしない
         }
 
         this.Explain=Exp;
