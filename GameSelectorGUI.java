@@ -216,9 +216,18 @@ public class GameSelectorGUI{
                 updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
             }
         });
+        // layeredRoot 自体のリサイズ（起動時の初回レイアウト確定を含む）でもバウンドを更新する
+        layeredRoot.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
+            }
+        });
         f.addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
+                // ウィンドウが表示された後に確実にバウンドを更新してからアニメーションを開始する
+                updateLayerBounds(layeredRoot, backgroundPanel, backGroundCoverLayer, gameNameLayer, textLayer, backGroundPanelLayer);
                 animateDarkOverlay(1f, 0f, FADE_DURATION, null);
             }
 
@@ -514,7 +523,8 @@ class BackgroundPanel extends JPanel {
 
     public BackgroundPanel(Image img) {
         this.backgroundImage = img;
-        setOpaque(false);
+        setOpaque(true);
+        setBackground(Color.BLACK);
     }
 
     // 単体で背景を設定（静止画）
