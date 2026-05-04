@@ -24,13 +24,6 @@ import javax.swing.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
-import javafx.scene.layout.StackPane;
 
 public class GameSelectorGUI{
     ArrayList<Game> Games=new ArrayList<>();
@@ -85,9 +78,7 @@ public class GameSelectorGUI{
 
         // 背景用パネルを作成してフレームのコンテントに設定（背景は自動でリサイズして描画される）
         Image initialBg = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
-        String initialVideoPath = Games.get(selectNumber).backgroundVideoPath;
         backgroundPanel = new BackgroundPanel(initialBg);
-        backgroundPanel.setBackgroundMedia(initialBg, initialVideoPath);
         backgroundPanel.setLayout(new BorderLayout());
         var layeredRoot = new JLayeredPane();
         layeredRoot.setLayout(null);
@@ -272,15 +263,14 @@ public class GameSelectorGUI{
                     continue;
                 }
                 ArrayList<String> cols = parseCSVLine(line);
-                // 列順: ゲーム名,exe,icon.png,bg.png,bg.mp4,説明,チュートリアル
+                // 列順: ゲーム名,exe,icon.png,bg.png,説明,チュートリアル
                 String name = cols.size() > 0 ? cols.get(0) : "";
                 String path = cols.size() > 1 ? cols.get(1) : "null";
                 String image = cols.size() > 2 ? cols.get(2) : null;
                 String background = cols.size() > 3 ? cols.get(3) : null;
-                String backgroundVideo = cols.size() > 4 ? cols.get(4) : null;
-                String explain = cols.size() > 5 ? cols.get(5) : null;
-                String tut = cols.size() > 6 ? cols.get(6) : null;
-                Games.add(new Game(name, path, image, background, explain, tut, backgroundVideo));
+                String explain = cols.size() > 4 ? cols.get(4) : null;
+                String tut = cols.size() > 5 ? cols.get(5) : null;
+                Games.add(new Game(name, path, image, background, explain, tut));
             }
             return true;
         } catch (IOException ex) {
@@ -340,10 +330,9 @@ public class GameSelectorGUI{
 
         // 通常ウィンドウはゲーム名のみ更新
         GameNameText.setText(Games.get(selectNumber).name);
-        // 背景を選択中のゲームの backGround / 背景映像に更新
+        // 背景を選択中のゲームの backGround に更新
         Image background = Games.get(selectNumber).backGround != null ? Games.get(selectNumber).backGround.getImage() : null;
-        String videoPath = Games.get(selectNumber).backgroundVideoPath;
-        backgroundPanel.setBackgroundMedia(background, videoPath);
+        backgroundPanel.setBackgroundImage(background);
 
         // 前回選択されていた項目は即座に小さくする（アニメーション不要）
         if (previous >= 0 && previous != selectNumber) {
@@ -504,158 +493,22 @@ public class GameSelectorGUI{
 }
 
 // 背景描画用パネル
-// 静止画・アニメーション GIF・MP4 動画（JavaFX MediaPlayer）を背景として表示する
+// 静止画を背景として表示する
 class BackgroundPanel extends JPanel {
     private Image backgroundImage;
-    private Image backgroundVideoImage; // アニメーション GIF 用
     private float darkOverlayAlpha = 0f;
-
-    // MP4 再生用 JavaFX コンポーネント
-    private JFXPanel videoPanel;
-    private MediaPlayer mediaPlayer;
-    private String currentVideoPath;
-    private boolean jfxAvailable = false;
 
     public BackgroundPanel(Image img) {
         super(new BorderLayout());
         this.backgroundImage = img;
         setOpaque(true);
         setBackground(Color.BLACK);
-        initJFXPanel();
     }
 
-    private void initJFXPanel() {
-        try {
-            videoPanel = new JFXPanel(); // JavaFX ツールキットを初期化
-            videoPanel.setOpaque(true);
-            videoPanel.setVisible(false);
-            add(videoPanel, BorderLayout.CENTER);
-            Platform.setImplicitExit(false);
-            jfxAvailable = true;
-        } catch (Exception | Error e) {
-            System.err.println("JavaFX が利用できません。MP4 背景は無効: " + e.getMessage());
-            videoPanel = null;
-            jfxAvailable = false;
-        }
-    }
-
-    // 単体で背景を設定（静止画）
+    // 背景を設定（静止画）
     public void setBackgroundImage(Image img) {
         this.backgroundImage = img;
         repaint();
-    }
-
-    // 背景と背景映像を同時に設定
-    // videoPath が MP4 などの動画形式の場合は JavaFX で再生、GIF は ImageIcon で描画、null の場合は静止画のみ
-    public void setBackgroundMedia(Image background, String videoPath) {
-        this.backgroundImage = background;
-
-        if (videoPath != null && !videoPath.isBlank()) {
-            String lower = videoPath.toLowerCase();
-            if (lower.endsWith(".mp4") || lower.endsWith(".m4v")
-                    || lower.endsWith(".mov") || lower.endsWith(".avi")) {
-                // MP4 等: JavaFX MediaPlayer で再生
-                if (jfxAvailable) {
-                    playMP4(videoPath);
-                    return;
-                }
-                // JavaFX が使えない場合は静止画にフォールバック
-                stopMP4();
-            } else if (lower.endsWith(".gif")) {
-                // アニメーション GIF: ImageIcon でロードして描画
-                stopMP4();
-                ImageIcon icon = new ImageIcon(videoPath);
-                this.backgroundVideoImage = (icon.getImageLoadStatus() == MediaTracker.COMPLETE)
-                        ? icon.getImage() : null;
-            } else {
-                stopMP4();
-                this.backgroundVideoImage = null;
-            }
-        } else {
-            stopMP4();
-            this.backgroundVideoImage = null;
-        }
-        repaint();
-    }
-
-    private void playMP4(String videoPath) {
-        if (videoPath.equals(currentVideoPath) && mediaPlayer != null) {
-            // すでに同じ動画を再生中
-            return;
-        }
-        stopMP4();
-        currentVideoPath = videoPath;
-        this.backgroundVideoImage = null;
-
-        SwingUtilities.invokeLater(() -> {
-            if (videoPanel != null) videoPanel.setVisible(true);
-            repaint();
-        });
-
-        Platform.runLater(() -> {
-            try {
-                File videoFile = new File(videoPath);
-                if (!videoFile.exists()) {
-                    System.err.println("背景動画が見つかりません: " + videoPath);
-                    SwingUtilities.invokeLater(() -> {
-                        if (videoPanel != null) videoPanel.setVisible(false);
-                    });
-                    currentVideoPath = null;
-                    return;
-                }
-                String uri = videoFile.toURI().toString();
-                Media media = new Media(uri);
-                MediaPlayer mp = new MediaPlayer(media);
-                mp.setCycleCount(MediaPlayer.INDEFINITE); // ループ再生
-                mp.setVolume(0.0); // ミュート（BGM 干渉を防ぐ）
-                mp.setAutoPlay(true);
-
-                MediaView mediaView = new MediaView(mp);
-                mediaView.setPreserveRatio(false);
-
-                StackPane root = new StackPane(mediaView);
-                root.setStyle("-fx-background-color: black;");
-                Scene scene = new Scene(root);
-                scene.setFill(javafx.scene.paint.Color.BLACK);
-
-                // MediaView をパネルサイズに合わせてバインド
-                mediaView.fitWidthProperty().bind(root.widthProperty());
-                mediaView.fitHeightProperty().bind(root.heightProperty());
-
-                videoPanel.setScene(scene);
-                mp.play();
-                mediaPlayer = mp;
-
-                mp.setOnError(() -> {
-                    System.err.println("動画再生エラー: " + mp.getError().getMessage());
-                    SwingUtilities.invokeLater(() -> {
-                        if (videoPanel != null) videoPanel.setVisible(false);
-                    });
-                    currentVideoPath = null;
-                });
-            } catch (Exception e) {
-                System.err.println("MP4 再生エラー: " + e.getMessage());
-                SwingUtilities.invokeLater(() -> {
-                    if (videoPanel != null) videoPanel.setVisible(false);
-                });
-                currentVideoPath = null;
-            }
-        });
-    }
-
-    private void stopMP4() {
-        currentVideoPath = null;
-        if (mediaPlayer != null) {
-            final MediaPlayer mp = mediaPlayer;
-            mediaPlayer = null;
-            Platform.runLater(() -> {
-                mp.stop();
-                mp.dispose();
-            });
-        }
-        SwingUtilities.invokeLater(() -> {
-            if (videoPanel != null) videoPanel.setVisible(false);
-        });
     }
 
     public void setDarkOverlayAlpha(float alpha) {
@@ -666,19 +519,14 @@ class BackgroundPanel extends JPanel {
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
-        // MP4 再生中は JFXPanel が全面を覆うため静止画描画をスキップ
-        if (videoPanel != null && videoPanel.isVisible()) {
-            return;
-        }
         Graphics2D g2 = (Graphics2D) g.create();
         // 高品質なスケーリング
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         int w = getWidth();
         int h = getHeight();
 
-        Image drawTarget = backgroundVideoImage != null ? backgroundVideoImage : backgroundImage;
-        if (drawTarget != null) {
-            g2.drawImage(drawTarget, 0, 0, w, h, this);
+        if (backgroundImage != null) {
+            g2.drawImage(backgroundImage, 0, 0, w, h, this);
         }
         if (darkOverlayAlpha > 0f) {
             g2.setComposite(AlphaComposite.SrcOver.derive(darkOverlayAlpha));
