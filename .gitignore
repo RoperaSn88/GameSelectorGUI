@@ -24,7 +24,10 @@ hs_err_pid*
 replay_pid*
 
 #exeファイルをけす
-GameDatas
+out/artifacts/original_jar/GameDatas
+
+GameDatas/*
+!dummy.txt
 
 # ou消す
 out/*
