@@ -81,6 +81,11 @@ class GameDetailDialog extends JDialog {
         guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 16));
         guideLabel.setHorizontalAlignment(JLabel.CENTER);
         guidePanel.add(guideLabel, BorderLayout.CENTER);
+        JLabel noteLabel = new JLabel("※起動には少し時間がかかる場合があります");
+        noteLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 14));
+        noteLabel.setForeground(Color.GRAY);
+        noteLabel.setHorizontalAlignment(JLabel.CENTER);
+        guidePanel.add(noteLabel, BorderLayout.SOUTH);
 
         JPanel lowerPanel = new JPanel(new GridBagLayout());
         GridBagConstraints lowerGbc = new GridBagConstraints();
