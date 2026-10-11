@@ -180,6 +180,12 @@ public class GameSelectorGUI{
         var textLayer = new JPanel(new BorderLayout());
         textLayer.setOpaque(false);
         textLayer.add(textPanel, BorderLayout.WEST);
+        JLabel headerLabel = new JLabel("好きなゲームを選んでください");
+        headerLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 36));
+        headerLabel.setForeground(Color.WHITE);
+        headerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        headerLabel.setBorder(BorderFactory.createEmptyBorder(24, 0, 0, 0));
+        textLayer.add(headerLabel, BorderLayout.NORTH);
         JLabel guideLabel = new JLabel("上下キー/WSキーで選択　スペースで決定");
         guideLabel.setFont(new Font("BIZ UDPゴシック", Font.PLAIN, 24));
         guideLabel.setForeground(Color.WHITE);
