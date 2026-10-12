@@ -9,8 +9,8 @@ Packageからzipをダウンロードしてください。
 ダウンロードしたzipは解凍して使用してください。
 
 ### 1. ゲームを登録する。
-GameSelectorGUIで表示したい情報は、'GameMaster.csv'に書き込むことで使用することが可能です。
-'GameMaster.csv'には以下の情報を含んでください。
+GameSelectorGUIで表示したい情報は、`GameMaster.csv`に書き込むことで使用することが可能です。
+`GameMaster.csv`には以下の情報を含んでください。
 - ゲーム名
 - exeファイルの相対パス
 - アイコン画像の相対パス
@@ -22,11 +22,11 @@ GameSelectorGUIで表示したい情報は、'GameMaster.csv'に書き込むこ�
 > 直にcsvいじるの、くそだるいの極みでしかないんで、後のアプデで専用のアプリを配布します。
 
 ### 2. GameSelectorGUIを起動する。
-'GameMaster.csv'の書き込みが完了したら、'GameSelectorGUI.exe'を起動してください。
-以下の画面のように、'GameMaster.csv'に書き込んだデータが反映されているのを確認してください。
+`GameMaster.csv`の書き込みが完了したら、`GameSelectorGUI.exe`を起動してください。
+以下の画面のように、`GameMaster.csv`に書き込んだデータが反映されているのを確認してください。
 
 > [!WARNING]
-> 反映されてない場合、'GameMaster.csv'の以下の情報を確認してください。
+> 反映されてない場合、`GameMaster.csv`の以下の情報を確認してください。
 > - パスの記載ミス、もしくはパスの指定先が見つからない。パスは相対パスで記載してください。
 > - タイトルなどの入力忘れ
 
