@@ -5,12 +5,19 @@
 > 対応しているOSはWindowsのみです。
 
 ## 使い方
-Packageからzipをダウンロードしてください。
+Releaseからzipをダウンロードしてください。
 ダウンロードしたzipは解凍して使用してください。
 
+実行ファイルは2種類あります。
+1. GameEditorGUI.exe
+2. GameSelectorGUI.exe
+
 ### 1. ゲームを登録する。
-GameSelectorGUIで表示したい情報は、`GameMaster.csv`に書き込むことで使用することが可能です。
-`GameMaster.csv`には以下の情報を含んでください。
+ゲーム一覧で表示したい情報は、`GameEditorGUI.exe`を実行することで編集が可能です。
+
+<img width="603" height="470" alt="image" src="https://github.com/user-attachments/assets/bcf7db56-06e1-4d70-857c-f77bf190e1db" />
+
+新しくゲームを追加する場合、`新しくゲームを追加`から以下の情報を入力してください。
 - ゲーム名
 - exeファイルの相対パス
 - アイコン画像の相対パス
@@ -18,12 +25,13 @@ GameSelectorGUIで表示したい情報は、`GameMaster.csv`に書き込むこ�
 - ゲームの説明(任意)
 - 操作方法(任意)
 
-> [!NOTE]
-> 直にcsvいじるの、くそだるいの極みでしかないんで、後のアプデで専用のアプリを配布します。
+編集が完了したら、`GameEditorGUI`を閉じてください。
 
-### 2. GameSelectorGUIを起動する。
-`GameMaster.csv`の書き込みが完了したら、`GameSelectorGUI.exe`を起動してください。
+### 2. ゲームを選択する。
+ゲーム情報の入力が完了したら、`GameSelectorGUI.exe`を起動してください。
 以下の画面のように、`GameMaster.csv`に書き込んだデータが反映されているのを確認してください。
+
+<img width="1277" height="682" alt="image" src="https://github.com/user-attachments/assets/e5ad2361-5966-47b2-8a5c-e64106c70a46" />
 
 > [!WARNING]
 > 反映されてない場合、`GameMaster.csv`の以下の情報を確認してください。
