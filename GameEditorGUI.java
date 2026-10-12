@@ -231,8 +231,16 @@ public class GameEditorGUI {
         JScrollPane scroll = new JScrollPane(listPanel);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
 
+        JButton addBtn = new JButton("＋ 新しいゲームを追加");
+        addBtn.addActionListener(ev -> openEditDialog(new GameEntry(new ArrayList<>()), true));
+        JPanel top = new JPanel(new BorderLayout());
+        top.add(summaryLabel, BorderLayout.CENTER);
+        JPanel addPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        addPanel.add(addBtn);
+        top.add(addPanel, BorderLayout.EAST);
+
         frame.getContentPane().setLayout(new BorderLayout());
-        frame.getContentPane().add(summaryLabel, BorderLayout.NORTH);
+        frame.getContentPane().add(top, BorderLayout.NORTH);
         frame.getContentPane().add(scroll, BorderLayout.CENTER);
     }
 
@@ -305,7 +313,7 @@ public class GameEditorGUI {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttons.setOpaque(false);
         JButton edit = new JButton("編集");
-        edit.addActionListener(ev -> openEditDialog(index));
+        edit.addActionListener(ev -> openEditDialog(e, false));
         JButton delete = new JButton("削除");
         delete.addActionListener(ev -> deleteEntry(index));
         buttons.add(edit);
@@ -332,11 +340,11 @@ public class GameEditorGUI {
         refreshList();
     }
 
-    // ---------- 編集 ----------
+    // ---------- 編集・追加 ----------
 
-    private void openEditDialog(int index) {
-        GameEntry e = entries.get(index);
-        JDialog dialog = new JDialog(frame, "編集: " + e.values[0], true);
+    // isNew が true のときは e を末尾に追加する（保存に成功した場合のみ）
+    private void openEditDialog(GameEntry e, boolean isNew) {
+        JDialog dialog = new JDialog(frame, isNew ? "新規追加" : "編集: " + e.values[0], true);
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(new EmptyBorder(10, 10, 10, 10));
 
@@ -389,9 +397,14 @@ public class GameEditorGUI {
         JLabel note = new JLabel("※ 説明・チュートリアルの改行は保存時に html (<br />) に変換されます。");
         note.setForeground(Color.GRAY);
 
-        JButton saveBtn = new JButton("保存");
+        JButton saveBtn = new JButton(isNew ? "追加" : "保存");
         JButton cancelBtn = new JButton("キャンセル");
         saveBtn.addActionListener(ev -> {
+            if (inputs[0].getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, COLUMN_LABELS[0] + "を入力してください。",
+                        "入力エラー", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             String[] before = e.values.clone();
             int beforeCount = e.originalColumnCount;
             for (int i = 0; i < COLUMN_COUNT; i++) {
@@ -399,10 +412,12 @@ public class GameEditorGUI {
                 e.values[i] = IS_HTML[i] ? toHtml(text) : text.trim();
             }
             e.originalColumnCount = COLUMN_COUNT;
+            if (isNew) entries.add(e);
             if (trySave()) {
                 dialog.dispose();
                 refreshList();
             } else {
+                if (isNew) entries.remove(entries.size() - 1);
                 e.values = before;
                 e.originalColumnCount = beforeCount;
             }
