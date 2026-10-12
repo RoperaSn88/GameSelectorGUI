@@ -14,17 +14,27 @@ public class Game {
         this.name=name;
         this.path=path;
         this.imagePath=imagePath;
-        this.image=new ImageIcon(imagePath);
-        this.backGround = new ImageIcon(backPath);
-        if (image.getImageLoadStatus() != MediaTracker.COMPLETE) {
+        this.image = loadIcon(imagePath);
+        if (image == null) {
             System.err.println("アイコンの読み込みに失敗しました: " + imagePath);
-            image = new ImageIcon(); 
+            image = new ImageIcon();
         }
-        if (backGround.getImageLoadStatus() != MediaTracker.COMPLETE) {
-            System.err.println("アイコンの読み込みに失敗しました: " + backPath);
-            backGround = new ImageIcon(); 
+        // 背景が未指定・読み込み失敗の場合はアイコン画像を背景として使う
+        this.backGround = loadIcon(backPath);
+        if (backGround == null) {
+            if (backPath != null && !backPath.trim().isEmpty()) {
+                System.err.println("背景の読み込みに失敗しました: " + backPath);
+            }
+            backGround = image;
         }
         this.Explain=Exp;
         this.Tutorial = tu;
+    }
+
+    // 画像を読み込む。パスが空、または読み込みに失敗した場合は null を返す
+    private static ImageIcon loadIcon(String path) {
+        if (path == null || path.trim().isEmpty()) return null;
+        ImageIcon icon = new ImageIcon(path);
+        return icon.getImageLoadStatus() == MediaTracker.COMPLETE ? icon : null;
     }
 }
